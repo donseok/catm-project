@@ -14,4 +14,14 @@ graph LR
     class F_PRODTRAN file
     class PGM001 pgm
 
+    PGM002[PGM002] <-->|SQL| DB_TB_INV_SUMMARY[(TB_INV_SUMMARY)]
+    class DB_TB_INV_SUMMARY db
+    PGM002[PGM002] <-->|I/O| F_INVLEDG[/INVLEDG/]
+    class F_INVLEDG file
+    PGM002[PGM002] <-->|I/O| F_INVMAST[/INVMAST/]
+    class F_INVMAST file
+    PGM002[PGM002] <-->|I/O| F_INVTRAN[/INVTRAN/]
+    class F_INVTRAN file
+    class PGM002 pgm
+
 ```

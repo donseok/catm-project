@@ -1,18 +1,29 @@
 {
-  "analysis_date": "2026-02-08T17:46:00.552331",
+  "analysis_date": "2026-02-08T17:56:27.880040",
   "mode": "claude_code_max_20x_logic",
-  "total_files": 1,
-  "success": 1,
+  "total_files": 2,
+  "success": 2,
   "errors": 0,
-  "total_elapsed_seconds": 64.6,
+  "total_elapsed_seconds": 139.4,
   "results": [
     {
       "program": "PGM001",
       "status": "success",
-      "elapsed_seconds": 64.6,
+      "elapsed_seconds": 62.5,
       "output_file": "./output/docs/PGM001.md",
       "copybooks_used": [
         "CPYTRANS"
+      ]
+    },
+    {
+      "program": "PGM002",
+      "status": "success",
+      "elapsed_seconds": 76.9,
+      "output_file": "./output/docs/PGM002.md",
+      "copybooks_used": [
+        "CPYINVMS",
+        "CPYINVTR",
+        "CPYLEDGR"
       ]
     }
   ]

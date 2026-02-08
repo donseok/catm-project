@@ -27,21 +27,52 @@
       "has_cics": false,
       "has_db2": true,
       "has_vsam": true
+    },
+    {
+      "name": "PGM002",
+      "file_path": "src/cobol/PGM002.cbl",
+      "line_count": 167,
+      "program_id": "PGM002",
+      "calls": [
+        "ABNDPGM",
+        "ERRLOG",
+        "SQLERR",
+        "STOCKERR"
+      ],
+      "copies": [
+        "CPYINVMS",
+        "CPYINVTR",
+        "CPYLEDGR"
+      ],
+      "db2_tables": [
+        "TB_INV_SUMMARY"
+      ],
+      "vsam_files": [
+        "INVLEDG",
+        "INVMAST",
+        "INVTRAN"
+      ],
+      "cics_maps": [],
+      "complexity": 18,
+      "paragraph_count": 10,
+      "has_cics": false,
+      "has_db2": true,
+      "has_vsam": true
     }
   ],
   "jcl_jobs": [],
   "summary": {
-    "total_programs": 1,
-    "total_lines": 116,
+    "total_programs": 2,
+    "total_lines": 283,
     "total_jcl_jobs": 0,
-    "avg_complexity": 12.0,
-    "max_complexity": 12,
-    "unique_copybooks": 2,
-    "unique_db2_tables": 1,
-    "unique_vsam_files": 2,
+    "avg_complexity": 15.0,
+    "max_complexity": 18,
+    "unique_copybooks": 5,
+    "unique_db2_tables": 2,
+    "unique_vsam_files": 5,
     "cics_programs": 0,
-    "db2_programs": 1,
-    "vsam_programs": 1
+    "db2_programs": 2,
+    "vsam_programs": 2
   },
-  "scan_date": "2026-02-08T17:40:25.903219"
+  "scan_date": "2026-02-08T17:54:08.045673"
 }

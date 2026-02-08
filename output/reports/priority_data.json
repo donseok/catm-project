@@ -1,13 +1,36 @@
 {
   "scored_programs": [
     {
-      "name": "PGM001",
+      "name": "PGM002",
       "scores": {
         "business_importance": 5,
         "technical_complexity": 10,
         "dependency_impact": 10,
         "conversion_ease": 7,
         "final": 7.65
+      },
+      "metrics": {
+        "line_count": 167,
+        "complexity": 18,
+        "calls": 4,
+        "copies": 3,
+        "db2_tables": 1,
+        "has_cics": false,
+        "has_db2": true
+      },
+      "recommendation": {
+        "method": "자동 변환",
+        "phase": ""
+      }
+    },
+    {
+      "name": "PGM001",
+      "scores": {
+        "business_importance": 5,
+        "technical_complexity": 6.7,
+        "dependency_impact": 7.1,
+        "conversion_ease": 7,
+        "final": 6.25
       },
       "metrics": {
         "line_count": 116,

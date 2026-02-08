@@ -5,132 +5,376 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CATM Dashboard - COBOL Analysis Monitor</title>
+
+    <!-- Pretendard Font -->
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+
     <link rel="stylesheet" href="dashboard/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
 <body>
     <!-- Header -->
     <header class="header">
         <div class="header-left">
-            <h1>🔍 CATM Dashboard</h1>
+            <h1>CATM Dashboard</h1>
             <span class="subtitle">COBOL Analysis Task Manager</span>
         </div>
         <div class="header-right">
             <span class="scan-date" id="scanDate">-</span>
             <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                <span class="icon-sun">☀️</span>
-                <span class="icon-moon">🌙</span>
+                <span class="icon-sun">&#9728;&#65039;</span>
+                <span class="icon-moon">&#9790;&#65039;</span>
             </button>
         </div>
     </header>
 
+    <!-- Tab Navigation -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="overview">
+            <span class="tab-icon">&#128202;</span>개요
+        </button>
+        <button class="tab-btn" data-tab="programs">
+            <span class="tab-icon">&#128203;</span>프로그램 상세
+        </button>
+        <button class="tab-btn" data-tab="datadict">
+            <span class="tab-icon">&#128218;</span>데이터 사전
+        </button>
+        <button class="tab-btn" data-tab="modernization">
+            <span class="tab-icon">&#128640;</span>모더나이제이션
+        </button>
+        <button class="tab-btn" data-tab="dependencies">
+            <span class="tab-icon">&#128279;</span>의존성 그래프
+        </button>
+    </nav>
+
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Summary Cards -->
-        <section class="summary-cards">
-            <div class="card summary-card">
-                <div class="card-icon">📊</div>
-                <div class="card-content">
-                    <span class="card-value" id="totalPrograms">-</span>
-                    <span class="card-label">총 프로그램</span>
-                </div>
-            </div>
-            <div class="card summary-card">
-                <div class="card-icon">📝</div>
-                <div class="card-content">
-                    <span class="card-value" id="totalLines">-</span>
-                    <span class="card-label">총 라인 수</span>
-                </div>
-            </div>
-            <div class="card summary-card">
-                <div class="card-icon">⚡</div>
-                <div class="card-content">
-                    <span class="card-value" id="avgComplexity">-</span>
-                    <span class="card-label">평균 복잡도</span>
-                </div>
-            </div>
-            <div class="card summary-card">
-                <div class="card-icon">🗄️</div>
-                <div class="card-content">
-                    <span class="card-value" id="db2Programs">-</span>
-                    <span class="card-label">DB2 프로그램</span>
-                </div>
-            </div>
-        </section>
 
-        <!-- Charts Section -->
-        <section class="charts-section">
-            <div class="card chart-card">
-                <h2 class="card-title">📈 우선순위 점수</h2>
-                <div class="chart-container">
-                    <canvas id="priorityChart"></canvas>
-                </div>
-            </div>
-            <div class="card chart-card">
-                <h2 class="card-title">🎯 기술 분포</h2>
-                <div class="chart-container">
-                    <canvas id="techChart"></canvas>
-                </div>
-            </div>
-        </section>
+        <!-- ========== Tab 1: Overview ========== -->
+        <div class="tab-panel active" id="tab-overview">
 
-        <!-- Program Table -->
-        <section class="table-section">
-            <div class="card table-card">
-                <div class="table-header">
-                    <h2 class="card-title">📋 프로그램 목록</h2>
-                    <div class="table-controls">
-                        <input type="text" id="searchInput" placeholder="검색..." class="search-input">
-                        <select id="sortSelect" class="sort-select">
-                            <option value="name">이름순</option>
-                            <option value="complexity">복잡도순</option>
-                            <option value="lines">라인수순</option>
-                            <option value="score">우선순위순</option>
-                        </select>
+            <!-- Summary Cards (6개: 3열×2행) -->
+            <section class="summary-cards">
+                <div class="card summary-card animate-in" data-accent="blue">
+                    <div class="card-icon">&#128202;</div>
+                    <div class="card-content">
+                        <span class="card-value" id="totalPrograms">
+                            <span class="skeleton skeleton-value"></span>
+                        </span>
+                        <span class="card-label">총 프로그램</span>
                     </div>
                 </div>
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>프로그램</th>
-                                <th>라인 수</th>
-                                <th>복잡도</th>
-                                <th>CALL</th>
-                                <th>COPY</th>
-                                <th>DB2</th>
-                                <th>CICS</th>
-                                <th>우선순위</th>
-                                <th>전환방식</th>
-                            </tr>
-                        </thead>
-                        <tbody id="programTableBody">
-                            <!-- Dynamic content -->
-                        </tbody>
-                    </table>
+                <div class="card summary-card animate-in" data-accent="emerald">
+                    <div class="card-icon">&#128221;</div>
+                    <div class="card-content">
+                        <span class="card-value" id="totalLines">
+                            <span class="skeleton skeleton-value"></span>
+                        </span>
+                        <span class="card-label">총 라인 수</span>
+                    </div>
                 </div>
-            </div>
-        </section>
+                <div class="card summary-card animate-in" data-accent="purple">
+                    <div class="card-icon">&#9889;</div>
+                    <div class="card-content">
+                        <span class="card-value" id="avgComplexity">
+                            <span class="skeleton skeleton-value"></span>
+                        </span>
+                        <span class="card-label">평균 복잡도</span>
+                    </div>
+                </div>
+                <div class="card summary-card animate-in" data-accent="amber">
+                    <div class="card-icon">&#128451;&#65039;</div>
+                    <div class="card-content">
+                        <span class="card-value" id="db2Programs">
+                            <span class="skeleton skeleton-value"></span>
+                        </span>
+                        <span class="card-label">DB2 프로그램</span>
+                    </div>
+                </div>
+                <div class="card summary-card animate-in" data-accent="teal">
+                    <div class="card-icon">&#128220;</div>
+                    <div class="card-content">
+                        <span class="card-value" id="copybookCount">
+                            <span class="skeleton skeleton-value"></span>
+                        </span>
+                        <span class="card-label">COPYBOOK 수</span>
+                    </div>
+                </div>
+                <div class="card summary-card animate-in" data-accent="rose">
+                    <div class="card-icon">&#128450;</div>
+                    <div class="card-content">
+                        <span class="card-value" id="vsamCount">
+                            <span class="skeleton skeleton-value"></span>
+                        </span>
+                        <span class="card-label">VSAM 파일 수</span>
+                    </div>
+                </div>
+            </section>
 
-        <!-- Dependency Graph -->
-        <section class="graph-section">
-            <div class="card graph-card">
-                <h2 class="card-title">🔗 의존성 그래프</h2>
-                <div class="mermaid-container">
-                    <pre class="mermaid" id="dependencyGraph">
-                        graph TD
-                            LOADING[Loading...]
-                    </pre>
+            <!-- Phase Classification -->
+            <section class="phase-section">
+                <h2 class="phase-section-title">전환 단계 분류</h2>
+                <div class="phase-cards" id="phaseCards">
+                    <div class="card phase-card animate-in">
+                        <div class="phase-card-header">
+                            <span class="phase-badge phase-1">Phase 1</span>
+                            <span class="phase-timeline">즉시 전환</span>
+                        </div>
+                        <div class="phase-stats" id="phase1Stats">
+                            <div class="skeleton skeleton-value" style="width:100%;height:60px;"></div>
+                        </div>
+                    </div>
+                    <div class="card phase-card animate-in">
+                        <div class="phase-card-header">
+                            <span class="phase-badge phase-2">Phase 2</span>
+                            <span class="phase-timeline">3개월 이내</span>
+                        </div>
+                        <div class="phase-stats" id="phase2Stats">
+                            <div class="skeleton skeleton-value" style="width:100%;height:60px;"></div>
+                        </div>
+                    </div>
+                    <div class="card phase-card animate-in">
+                        <div class="phase-card-header">
+                            <span class="phase-badge phase-3">Phase 3</span>
+                            <span class="phase-timeline">6개월 이내</span>
+                        </div>
+                        <div class="phase-stats" id="phase3Stats">
+                            <div class="skeleton skeleton-value" style="width:100%;height:60px;"></div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+
+            <!-- Risk Summary -->
+            <section class="risk-section" id="riskSection" style="display:none;">
+                <h2 class="phase-section-title">리스크 요약</h2>
+                <div class="risk-cards" id="riskCards"></div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-section">
+                <div class="card chart-card animate-in">
+                    <h2 class="card-title">우선순위 점수</h2>
+                    <div class="chart-container" id="priorityChartWrap">
+                        <div class="skeleton skeleton-chart"></div>
+                        <canvas id="priorityChart" style="display:none;"></canvas>
+                    </div>
+                </div>
+                <div class="card chart-card animate-in">
+                    <h2 class="card-title">기술 분포</h2>
+                    <div class="chart-container" id="techChartWrap">
+                        <div class="skeleton skeleton-chart"></div>
+                        <canvas id="techChart" style="display:none;"></canvas>
+                        <div class="doughnut-center-text" id="doughnutCenter" style="display:none;">
+                            <div class="doughnut-center-value" id="doughnutTotal">-</div>
+                            <div class="doughnut-center-label">Total</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analysis Status -->
+            <section class="analysis-status-section" id="analysisStatusSection" style="display:none;">
+                <h2 class="phase-section-title">분석 실행 상태</h2>
+                <div class="card analysis-status" id="analysisStatus"></div>
+            </section>
+        </div>
+
+        <!-- ========== Tab 2: Program Detail ========== -->
+        <div class="tab-panel" id="tab-programs">
+            <section class="table-section">
+                <div class="card table-card">
+                    <div class="table-header">
+                        <h2 class="card-title">프로그램 상세</h2>
+                        <div class="table-controls">
+                            <input type="text" id="searchInput" placeholder="프로그램 검색..." class="search-input">
+                            <select id="sortSelect" class="sort-select">
+                                <option value="name">이름순</option>
+                                <option value="complexity">복잡도순</option>
+                                <option value="lines">라인수순</option>
+                                <option value="score">우선순위순</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>프로그램</th>
+                                    <th>라인 수</th>
+                                    <th>복잡도</th>
+                                    <th>CALL</th>
+                                    <th>COPY</th>
+                                    <th>DB2</th>
+                                    <th>CICS</th>
+                                    <th>우선순위</th>
+                                    <th>전환방식</th>
+                                </tr>
+                            </thead>
+                            <tbody id="programTableBody">
+                                <!-- Skeleton rows -->
+                                <tr>
+                                    <td colspan="9">
+                                        <div class="skeleton-table-row">
+                                            <div class="skeleton skeleton-cell"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                        </div>
+                                        <div class="skeleton-table-row">
+                                            <div class="skeleton skeleton-cell"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                        </div>
+                                        <div class="skeleton-table-row">
+                                            <div class="skeleton skeleton-cell"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                            <div class="skeleton skeleton-cell-sm"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========== Tab 3: Data Dictionary ========== -->
+        <div class="tab-panel" id="tab-datadict">
+            <section class="datadict-section">
+                <h2 class="phase-section-title">COPYBOOK 데이터 사전</h2>
+                <div class="copybook-cards" id="copybookCards">
+                    <div class="skeleton skeleton-chart" style="height:120px;"></div>
+                </div>
+
+                <div class="copybook-detail" id="copybookDetail" style="display:none;">
+                    <div class="card">
+                        <h3 class="card-title" id="copybookDetailTitle">-</h3>
+                        <div class="markdown-body" id="copybookDetailBody"></div>
+                    </div>
+                </div>
+
+                <div class="erd-section" id="erdSection" style="display:none;">
+                    <h2 class="phase-section-title">ERD - COPYBOOK 관계도</h2>
+                    <div class="card graph-card">
+                        <div class="mermaid-container">
+                            <pre class="mermaid" id="erdGraph">graph TD
+    LOADING[Loading...]</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========== Tab 4: Modernization ========== -->
+        <div class="tab-panel" id="tab-modernization">
+            <section class="modernization-section">
+                <!-- Timeline Roadmap -->
+                <h2 class="phase-section-title">모더나이제이션 로드맵</h2>
+                <div class="card timeline-card">
+                    <div class="timeline" id="modernTimeline"></div>
+                </div>
+
+                <!-- Conversion Strategy Table -->
+                <h2 class="phase-section-title" style="margin-top:1.5rem;">전환 전략</h2>
+                <div class="card table-card">
+                    <div class="table-wrapper">
+                        <table class="data-table" id="strategyTable">
+                            <thead>
+                                <tr>
+                                    <th>프로그램</th>
+                                    <th>전환방식</th>
+                                    <th>Phase</th>
+                                    <th>최종 점수</th>
+                                    <th>주요 마일스톤</th>
+                                    <th>주의사항</th>
+                                </tr>
+                            </thead>
+                            <tbody id="strategyTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Risk Matrix -->
+                <h2 class="phase-section-title" style="margin-top:1.5rem;">리스크 매트릭스</h2>
+                <div class="risk-matrix-cards" id="riskMatrixCards"></div>
+
+                <!-- Radar Chart for Weights -->
+                <h2 class="phase-section-title" style="margin-top:1.5rem;">가중치 기준</h2>
+                <div class="card chart-card">
+                    <div class="radar-chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========== Tab 5: Dependency Graph ========== -->
+        <div class="tab-panel" id="tab-dependencies">
+            <section class="graph-section">
+                <div class="card graph-card">
+                    <div class="graph-header">
+                        <h2 class="card-title">의존성 그래프</h2>
+                        <div class="graph-controls">
+                            <button class="graph-btn active" id="graphCallView">Call Graph</button>
+                            <button class="graph-btn" id="graphDataFlowView">Data Flow</button>
+                            <span class="graph-controls-divider"></span>
+                            <button class="graph-btn" id="graphZoomIn">+ 확대</button>
+                            <button class="graph-btn" id="graphZoomOut">- 축소</button>
+                            <button class="graph-btn" id="graphFullscreen">전체화면</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-container" id="mermaidContainer">
+                        <button class="fullscreen-close" id="fullscreenClose">닫기</button>
+                        <pre class="mermaid" id="dependencyGraph">
+                            graph TD
+                                LOADING[Loading...]
+                        </pre>
+                    </div>
+                    <div class="graph-legend">
+                        <div class="legend-item">
+                            <span class="legend-color program"></span>
+                            <span>메인 프로그램</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color subprogram"></span>
+                            <span>서브프로그램 (CALL)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color copybook"></span>
+                            <span>COPYBOOK (COPY)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color db2"></span>
+                            <span>DB2 테이블</span>
+                        </div>
+                        <div class="legend-item" id="legendFile" style="display:none;">
+                            <span class="legend-color file"></span>
+                            <span>파일 (I/O)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
     </main>
 
     <!-- Footer -->
     <footer class="footer">
-        <p>© 2026 동국시스템즈. All Rights Reserved. | CATM - COBOL Analysis Task Manager</p>
+        <p>&copy; 2026 동국시스템즈. All Rights Reserved. | CATM - COBOL Analysis Task Manager</p>
     </footer>
 
     <script src="dashboard/app.js"></script>
