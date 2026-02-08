@@ -13,6 +13,12 @@
           "file": "src\\cobol\\PGM002.cbl",
           "lines": 166,
           "size_kb": 11.7
+        },
+        {
+          "name": "PGM003",
+          "file": "src\\cobol\\PGM003.cbl",
+          "lines": 178,
+          "size_kb": 12.6
         }
       ]
     },
@@ -35,6 +41,18 @@
           "file": "src\\copybook\\CPYLEDGR.cpy",
           "lines": 13,
           "size_kb": 0.8
+        },
+        {
+          "name": "CPYQCHS",
+          "file": "src\\copybook\\CPYQCHS.cpy",
+          "lines": 13,
+          "size_kb": 0.6
+        },
+        {
+          "name": "CPYQCRS",
+          "file": "src\\copybook\\CPYQCRS.cpy",
+          "lines": 30,
+          "size_kb": 1.4
         },
         {
           "name": "CPYSMRY",
@@ -63,5 +81,5 @@
       "files": []
     }
   },
-  "scan_date": "2026-02-08T20:03:06.870438"
+  "scan_date": "2026-02-08T20:22:12.187809"
 }

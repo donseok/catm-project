@@ -1,10 +1,10 @@
 {
-  "analysis_date": "2026-02-08T20:06:11.423608",
+  "analysis_date": "2026-02-08T20:26:34.358002",
   "mode": "claude_code_max_20x_logic",
-  "total_files": 2,
-  "success": 2,
+  "total_files": 3,
+  "success": 3,
   "errors": 0,
-  "total_elapsed_seconds": 163.8,
+  "total_elapsed_seconds": 249.9,
   "results": [
     {
       "program": "PGM001",
@@ -19,12 +19,22 @@
     {
       "program": "PGM002",
       "status": "success",
-      "elapsed_seconds": 90.1,
+      "elapsed_seconds": 92.6,
       "output_file": "./output\\docs\\PGM002.md",
       "copybooks_used": [
         "CPYINVMS",
         "CPYINVTR",
         "CPYLEDGR"
+      ]
+    },
+    {
+      "program": "PGM003",
+      "status": "success",
+      "elapsed_seconds": 83.6,
+      "output_file": "./output\\docs\\PGM003.md",
+      "copybooks_used": [
+        "CPYQCHS",
+        "CPYQCRS"
       ]
     }
   ]

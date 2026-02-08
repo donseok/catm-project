@@ -46,6 +46,35 @@ erDiagram
         string FILLER
     }
 
+    CPYQCHS {
+        number QH_INSPECT_ID
+        string QH_LINE_CD
+        string QH_PRODUCT_CD
+        string QH_JUDGE_CD
+        number QH_INSPECT_DT
+        string QH_FINAL_RESULT
+        string FILLER
+    }
+
+    CPYQCRS {
+        string QR_PLANT_CD
+        string QR_LINE_CD
+        number QR_INSPECT_DT
+        number QR_INSPECT_ID
+        string QR_PRODUCT_CD
+        string QR_LOT_NO
+        string QR_JUDGE_CD
+        string QR_DEFECT_TYPE
+        string QR_DEFECT_CD
+        number QR_MEASURE_VAL
+        number QR_UPPER_LIMIT
+        number QR_LOWER_LIMIT
+        number QR_REWORK_CNT
+        string QR_INSPECTOR_ID
+        number QR_REG_TIME
+        string FILLER
+    }
+
     CPYSMRY {
         string DS_PLANT_CD
         number DS_PROD_DATE

@@ -24,4 +24,12 @@ graph LR
     class F_INVTRAN file
     class PGM002 pgm
 
+    PGM003[PGM003] <-->|SQL| DB_TB_QC_DAILY_SUMMARY[(TB_QC_DAILY_SUMMARY)]
+    class DB_TB_QC_DAILY_SUMMARY db
+    PGM003[PGM003] <-->|I/O| F_QCHIST[/QCHIST/]
+    class F_QCHIST file
+    PGM003[PGM003] <-->|I/O| F_QCRSLT[/QCRSLT/]
+    class F_QCRSLT file
+    class PGM003 pgm
+
 ```

@@ -1,13 +1,36 @@
 {
   "scored_programs": [
     {
+      "name": "PGM003",
+      "scores": {
+        "business_importance": 9,
+        "technical_complexity": 10,
+        "dependency_impact": 8.6,
+        "conversion_ease": 6,
+        "final": 8.57
+      },
+      "metrics": {
+        "line_count": 179,
+        "complexity": 27,
+        "calls": 4,
+        "copies": 2,
+        "db2_tables": 1,
+        "has_cics": false,
+        "has_db2": true
+      },
+      "recommendation": {
+        "method": "하이브리드",
+        "phase": "Phase 1"
+      }
+    },
+    {
       "name": "PGM002",
       "scores": {
         "business_importance": 7,
-        "technical_complexity": 10,
+        "technical_complexity": 6.7,
         "dependency_impact": 10,
         "conversion_ease": 7,
-        "final": 8.35
+        "final": 7.53
       },
       "metrics": {
         "line_count": 167,
@@ -20,17 +43,17 @@
       },
       "recommendation": {
         "method": "자동 변환",
-        "phase": "Phase 1"
+        "phase": "Phase 2"
       }
     },
     {
       "name": "PGM001",
       "scores": {
         "business_importance": 8,
-        "technical_complexity": 6.7,
+        "technical_complexity": 4.4,
         "dependency_impact": 7.1,
         "conversion_ease": 7,
-        "final": 7.29
+        "final": 6.72
       },
       "metrics": {
         "line_count": 116,

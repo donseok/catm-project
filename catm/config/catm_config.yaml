@@ -101,6 +101,8 @@ program_categories:
     programs: ["PGM001"]
   - name: "출하업무"
     programs: ["PGM002"]
+  - name: "품질관리"
+    programs: ["PGM003"]
 
 # --- 로그 설정 ---
 logging:

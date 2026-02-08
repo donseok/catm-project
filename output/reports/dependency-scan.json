@@ -60,21 +60,51 @@
       "has_db2": true,
       "has_vsam": true,
       "category": "출하업무"
+    },
+    {
+      "name": "PGM003",
+      "file_path": "src\\cobol\\PGM003.cbl",
+      "line_count": 179,
+      "program_id": "PGM003",
+      "calls": [
+        "ABNDPGM",
+        "ERRLOG",
+        "QCALERT",
+        "SQLERR"
+      ],
+      "copies": [
+        "CPYQCHS",
+        "CPYQCRS"
+      ],
+      "db2_tables": [
+        "TB_QC_DAILY_SUMMARY"
+      ],
+      "vsam_files": [
+        "QCHIST",
+        "QCRSLT"
+      ],
+      "cics_maps": [],
+      "complexity": 27,
+      "paragraph_count": 13,
+      "has_cics": false,
+      "has_db2": true,
+      "has_vsam": true,
+      "category": "품질관리"
     }
   ],
   "jcl_jobs": [],
   "summary": {
-    "total_programs": 2,
-    "total_lines": 283,
+    "total_programs": 3,
+    "total_lines": 462,
     "total_jcl_jobs": 0,
-    "avg_complexity": 15.0,
-    "max_complexity": 18,
-    "unique_copybooks": 5,
-    "unique_db2_tables": 2,
-    "unique_vsam_files": 5,
+    "avg_complexity": 19.0,
+    "max_complexity": 27,
+    "unique_copybooks": 7,
+    "unique_db2_tables": 3,
+    "unique_vsam_files": 7,
     "cics_programs": 0,
-    "db2_programs": 2,
-    "vsam_programs": 2
+    "db2_programs": 3,
+    "vsam_programs": 3
   },
   "categories_summary": [
     {
@@ -94,7 +124,16 @@
       "programs": [
         "PGM002"
       ]
+    },
+    {
+      "name": "품질관리",
+      "program_count": 1,
+      "total_lines": 179,
+      "avg_complexity": 27.0,
+      "programs": [
+        "PGM003"
+      ]
     }
   ],
-  "scan_date": "2026-02-08T20:03:16.461725"
+  "scan_date": "2026-02-08T20:22:12.672260"
 }
