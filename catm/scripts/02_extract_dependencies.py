@@ -64,19 +64,30 @@ def analyze_jcl(file_path: str) -> dict:
     }
 
 
+def build_category_map(config: dict) -> dict[str, str]:
+    """프로그램명 → 카테고리명 매핑 딕셔너리 생성"""
+    cat_map: dict[str, str] = {}
+    for cat in config.get("program_categories", []):
+        for pgm in cat.get("programs", []):
+            cat_map[pgm.upper()] = cat["name"]
+    return cat_map
+
+
 def main():
     print("=" * 50)
     print("  CATM Step 2: 의존성 추출 (정적 분석)")
     print("=" * 50)
-    
+
     config = load_config()
     source_root = config["paths"]["source_root"]
     output_root = config["paths"]["output_root"]
-    
+    category_map = build_category_map(config)
+
     result = {
         "programs": [],
         "jcl_jobs": [],
         "summary": {},
+        "categories_summary": [],
         "scan_date": datetime.now().isoformat(),
     }
     
@@ -104,6 +115,7 @@ def main():
                 "has_cics": pgm.has_cics,
                 "has_db2": pgm.has_db2,
                 "has_vsam": pgm.has_vsam,
+                "category": category_map.get(pgm.name, "미분류"),
             })
             print(f" ✅ (CALL:{len(pgm.calls)}, COPY:{len(pgm.copies)}, "
                   f"DB2:{len(pgm.db2_tables)}, 복잡도:{pgm.complexity})")
@@ -143,6 +155,26 @@ def main():
         "vsam_programs": sum(1 for p in programs if p["has_vsam"]),
     }
     
+    # --- 카테고리별 요약 ---
+    cat_groups: dict[str, list] = {}
+    for p in programs:
+        cat = p.get("category", "미분류")
+        cat_groups.setdefault(cat, []).append(p)
+
+    result["categories_summary"] = [
+        {
+            "name": cat_name,
+            "program_count": len(progs),
+            "total_lines": sum(p["line_count"] for p in progs),
+            "avg_complexity": (
+                round(sum(p["complexity"] for p in progs) / len(progs), 1)
+                if progs else 0
+            ),
+            "programs": [p["name"] for p in progs],
+        }
+        for cat_name, progs in cat_groups.items()
+    ]
+
     # 저장
     json_path = os.path.join(output_root, "reports", "dependency-scan.json")
     save_json(result, json_path)

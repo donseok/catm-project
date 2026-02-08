@@ -20,6 +20,7 @@
     <!-- Header -->
     <header class="header">
         <div class="header-left">
+            <div class="logo-icon">DK</div>
             <h1>CATM Dashboard</h1>
             <span class="subtitle">COBOL Analysis Task Manager</span>
         </div>
@@ -56,6 +57,25 @@
 
         <!-- ========== Tab 1: Overview ========== -->
         <div class="tab-panel active" id="tab-overview">
+
+            <!-- Role Toggle -->
+            <div class="role-toggle-container">
+                <span class="role-toggle-label">뷰 전환:</span>
+                <div class="role-toggle-buttons" id="roleToggle">
+                    <button class="role-btn active" data-role="executive" title="진행률, 리스크, 마일스톤 중심">
+                        📊 경영진
+                    </button>
+                    <button class="role-btn" data-role="planner" title="Phase별 분류, 우선순위 중심">
+                        📋 기획자
+                    </button>
+                    <button class="role-btn" data-role="architect" title="의존성, 기술 부채 중심">
+                        🏗️ 설계자
+                    </button>
+                    <button class="role-btn" data-role="developer" title="작업 체크리스트, 상세 구현 중심">
+                        💻 개발자
+                    </button>
+                </div>
+            </div>
 
             <!-- Summary Cards (6개: 3열×2행) -->
             <section class="summary-cards">
@@ -155,6 +175,24 @@
                 <div class="risk-cards" id="riskCards"></div>
             </section>
 
+            <!-- Category Summary -->
+            <section class="category-section" id="categorySection" style="display:none;">
+                <h2 class="phase-section-title">카테고리별 현황</h2>
+                <div class="category-summary-row">
+                    <div class="category-summary-cards" id="categorySummaryCards"></div>
+                    <div class="card chart-card category-chart-card animate-in">
+                        <h2 class="card-title">카테고리별 프로그램 분포</h2>
+                        <div class="chart-container" id="categoryChartWrap">
+                            <canvas id="categoryChart"></canvas>
+                            <div class="doughnut-center-text" id="categoryDoughnutCenter" style="display:none;">
+                                <div class="doughnut-center-value" id="categoryDoughnutTotal">-</div>
+                                <div class="doughnut-center-label">Total</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Charts Section -->
             <section class="charts-section">
                 <div class="card chart-card animate-in">
@@ -195,6 +233,7 @@
                             <button class="filter-toggle-btn" id="filterToggleBtn">🔍 고급 필터</button>
                             <select id="sortSelect" class="sort-select">
                                 <option value="name">이름순</option>
+                                <option value="category">카테고리순</option>
                                 <option value="complexity">복잡도순</option>
                                 <option value="lines">라인수순</option>
                                 <option value="score">우선순위순</option>
@@ -224,29 +263,41 @@
                             <div class="filter-group">
                                 <label>기술 스택</label>
                                 <div class="checkbox-group">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="filterDB2" checked> DB2
+                                    <label class="checkbox-label" title="IBM 관계형 데이터베이스 - SQL을 사용하여 데이터를 관리합니다">
+                                        <input type="checkbox" id="filterDB2" checked> DB2 <span
+                                            class="term-help">(관계형DB)</span>
                                     </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="filterCICS" checked> CICS
+                                    <label class="checkbox-label" title="IBM 온라인 트랜잭션 처리 시스템 - 화면/거래 처리를 담당합니다">
+                                        <input type="checkbox" id="filterCICS" checked> CICS <span
+                                            class="term-help">(온라인처리)</span>
                                     </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="filterVSAM" checked> VSAM
+                                    <label class="checkbox-label" title="IBM 파일 시스템 - 순차/색인 파일을 관리합니다">
+                                        <input type="checkbox" id="filterVSAM" checked> VSAM <span
+                                            class="term-help">(파일시스템)</span>
                                     </label>
                                 </div>
                             </div>
                             <div class="filter-group">
-                                <label>Phase</label>
+                                <label>전환 단계</label>
                                 <div class="checkbox-group">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="filterPhase1" checked> Phase 1
+                                    <label class="checkbox-label" title="즉시 전환 가능 - 복잡도가 낮아 자동 전환 권장">
+                                        <input type="checkbox" id="filterPhase1" checked> Phase 1 <span
+                                            class="term-help">(즉시)</span>
                                     </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="filterPhase2" checked> Phase 2
+                                    <label class="checkbox-label" title="3개월 내 전환 - 중간 복잡도로 하이브리드 전환 권장">
+                                        <input type="checkbox" id="filterPhase2" checked> Phase 2 <span
+                                            class="term-help">(3개월)</span>
                                     </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="filterPhase3" checked> Phase 3
+                                    <label class="checkbox-label" title="6개월 내 전환 - 고복잡도로 재작성 필요">
+                                        <input type="checkbox" id="filterPhase3" checked> Phase 3 <span
+                                            class="term-help">(6개월)</span>
                                     </label>
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <label>업무 카테고리</label>
+                                <div class="checkbox-group" id="categoryFilterGroup">
+                                    <!-- 카테고리 체크박스는 JS에서 동적 생성 -->
                                 </div>
                             </div>
                         </div>
@@ -261,14 +312,16 @@
                             <thead>
                                 <tr>
                                     <th>프로그램</th>
+                                    <th title="업무 카테고리 (조업업무, 출하업무 등)">카테고리 <span class="term-icon">ⓘ</span></th>
                                     <th>라인 수</th>
-                                    <th>복잡도</th>
-                                    <th>CALL</th>
-                                    <th>COPY</th>
-                                    <th>DB2</th>
-                                    <th>CICS</th>
-                                    <th>우선순위</th>
-                                    <th>전환방식</th>
+                                    <th title="소스 코드의 복잡성 지표 (높을수록 복잡)">복잡도 <span class="term-icon">ⓘ</span></th>
+                                    <th title="다른 프로그램 호출 수 (CALL 문)">CALL <span class="term-icon">ⓘ</span></th>
+                                    <th title="포함된 COPYBOOK 수 (공통 데이터 정의)">COPY <span class="term-icon">ⓘ</span></th>
+                                    <th title="IBM 관계형 데이터베이스 사용 여부">DB2 <span class="term-icon">ⓘ</span></th>
+                                    <th title="온라인 트랜잭션 처리 사용 여부">CICS <span class="term-icon">ⓘ</span></th>
+                                    <th title="전환 우선순위 점수 (낮을수록 빠른 전환 가능)">우선순위 <span class="term-icon">ⓘ</span></th>
+                                    <th title="권장 전환 방식 (자동 변환 / 하이브리드 / 재작성)">전환방식 <span class="term-icon">ⓘ</span>
+                                    </th>
                                     <th>상세</th>
                                 </tr>
                             </thead>

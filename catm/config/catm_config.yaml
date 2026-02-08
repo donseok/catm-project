@@ -95,6 +95,13 @@ output:
     data_flow: true           # 데이터 흐름도
     erd: true                 # ERD (DB2 테이블)
 
+# --- 프로그램 업무 카테고리 ---
+program_categories:
+  - name: "조업업무"
+    programs: ["PGM001"]
+  - name: "출하업무"
+    programs: ["PGM002"]
+
 # --- 로그 설정 ---
 logging:
   level: "INFO"               # DEBUG, INFO, WARNING, ERROR

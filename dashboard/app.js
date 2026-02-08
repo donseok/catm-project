@@ -32,6 +32,7 @@ let state = {
     programs: [],
     priorityData: [],
     summary: {},
+    categoriesSummary: [],
     scanDate: null,
     inventory: null,
     analysisLog: null,
@@ -60,7 +61,8 @@ let state = {
         showVSAM: true,
         showPhase1: true,
         showPhase2: true,
-        showPhase3: true
+        showPhase3: true,
+        selectedCategories: [] // 빈 배열 = 전체 선택
     }
 };
 
@@ -78,6 +80,7 @@ async function loadData() {
         const depData = await depResponse.json();
         state.programs = depData.programs || [];
         state.summary = depData.summary || {};
+        state.categoriesSummary = depData.categories_summary || [];
         state.scanDate = depData.scan_date;
 
         const priorityData = await priorityResponse.json();
@@ -232,6 +235,39 @@ function switchTab(tabId) {
     }
 
     state.activeTab = tabId;
+}
+
+// ===================================
+// Category Helpers
+// ===================================
+
+const CATEGORY_COLORS = [
+    { bg: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6', chartBg: 'rgba(59, 130, 246, 0.85)' },
+    { bg: 'rgba(16, 185, 129, 0.12)', color: '#10b981', chartBg: 'rgba(16, 185, 129, 0.85)' },
+    { bg: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', chartBg: 'rgba(245, 158, 11, 0.85)' },
+    { bg: 'rgba(139, 92, 246, 0.12)', color: '#8b5cf6', chartBg: 'rgba(139, 92, 246, 0.85)' },
+    { bg: 'rgba(244, 63, 94, 0.12)', color: '#f43f5e', chartBg: 'rgba(244, 63, 94, 0.85)' },
+    { bg: 'rgba(20, 184, 166, 0.12)', color: '#14b8a6', chartBg: 'rgba(20, 184, 166, 0.85)' },
+    { bg: 'rgba(148, 163, 184, 0.15)', color: '#94a3b8', chartBg: 'rgba(148, 163, 184, 0.6)' },
+];
+
+function getCategoryColor(index) {
+    return CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+}
+
+function getUniqueCategories() {
+    const cats = new Set();
+    state.programs.filter(p => p.name !== '.GITKEEP').forEach(p => {
+        cats.add(p.category || '미분류');
+    });
+    return [...cats];
+}
+
+function getCategoryBadgeHtml(category) {
+    const cats = getUniqueCategories();
+    const idx = cats.indexOf(category || '미분류');
+    const c = getCategoryColor(idx >= 0 ? idx : cats.length);
+    return `<span class="badge badge-category" style="background:${c.bg};color:${c.color}">${escapeHtml(category || '미분류')}</span>`;
 }
 
 // ===================================
@@ -1382,6 +1418,7 @@ function toggleTheme() {
     if (state.dataLoaded) {
         renderPriorityChart();
         renderTechChart();
+        renderCategorySummary();
         if (state.modernizationRendered) {
             renderRadarChart();
         }
@@ -1441,10 +1478,12 @@ async function init() {
     if (loaded) {
         renderSummaryCards();
         renderPhaseCards();
+        renderCategorySummary();
         applyFiltersAndRender(); // Use new filter-based rendering
         renderPriorityChart();
         renderTechChart();
         initFilterControls();
+        initCategoryFilter();
         initPaginationControls();
         initDetailPanel();
         // Mermaid, DataDict, Modernization은 탭 전환 시 lazy-load
@@ -1459,7 +1498,7 @@ async function init() {
             if (el) el.innerHTML = '<span style="color:var(--text-muted);font-size:0.85rem;">데이터 없음</span>';
         });
         document.getElementById('programTableBody').innerHTML = `
-            <tr class="no-data-row"><td colspan="10">
+            <tr class="no-data-row"><td colspan="11">
                 데이터를 불러올 수 없습니다. CATM 분석을 먼저 실행하세요.
             </td></tr>
         `;
@@ -1512,6 +1551,19 @@ function readFiltersFromUI() {
     state.filters.showPhase1 = document.getElementById('filterPhase1')?.checked ?? true;
     state.filters.showPhase2 = document.getElementById('filterPhase2')?.checked ?? true;
     state.filters.showPhase3 = document.getElementById('filterPhase3')?.checked ?? true;
+
+    // 카테고리 필터 읽기
+    const catGroup = document.getElementById('categoryFilterGroup');
+    if (catGroup) {
+        const checked = catGroup.querySelectorAll('input[type="checkbox"]:checked');
+        const all = catGroup.querySelectorAll('input[type="checkbox"]');
+        // 전부 체크되었거나 아무것도 없으면 빈 배열 (전체 표시)
+        if (checked.length === all.length || checked.length === 0) {
+            state.filters.selectedCategories = [];
+        } else {
+            state.filters.selectedCategories = [...checked].map(cb => cb.value);
+        }
+    }
 }
 
 function resetFilters() {
@@ -1526,6 +1578,12 @@ function resetFilters() {
     document.getElementById('filterPhase2').checked = true;
     document.getElementById('filterPhase3').checked = true;
 
+    // 카테고리 체크박스 전부 체크
+    const catGroup = document.getElementById('categoryFilterGroup');
+    if (catGroup) {
+        catGroup.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+    }
+
     state.filters = {
         complexityMin: 0,
         complexityMax: 100,
@@ -1536,7 +1594,8 @@ function resetFilters() {
         showVSAM: true,
         showPhase1: true,
         showPhase2: true,
-        showPhase3: true
+        showPhase3: true,
+        selectedCategories: []
     };
 }
 
@@ -1585,12 +1644,19 @@ function applyFiltersAndRender() {
         if (phase === 2 && !f.showPhase2) return false;
         if (phase === 3 && !f.showPhase3) return false;
 
+        // Category filter
+        if (f.selectedCategories.length > 0) {
+            const cat = prog.category || '미분류';
+            if (!f.selectedCategories.includes(cat)) return false;
+        }
+
         return true;
     });
 
     // Sort
     filtered.sort((a, b) => {
         switch (sortBy) {
+            case 'category': return (a.category || '미분류').localeCompare(b.category || '미분류');
             case 'complexity': return (b.complexity || 0) - (a.complexity || 0);
             case 'lines': return (b.line_count || 0) - (a.line_count || 0);
             case 'score': return (b.scores?.final || 0) - (a.scores?.final || 0);
@@ -1674,7 +1740,7 @@ function renderPaginatedTable() {
     const pageData = state.filteredPrograms.slice(startIdx, endIdx);
 
     if (pageData.length === 0) {
-        tbody.innerHTML = `<tr class="no-data-row"><td colspan="10">
+        tbody.innerHTML = `<tr class="no-data-row"><td colspan="11">
             검색 결과가 없습니다.
         </td></tr>`;
         return;
@@ -1687,6 +1753,7 @@ function renderPaginatedTable() {
         return `
         <tr>
             <td><strong>${prog.name}</strong></td>
+            <td>${getCategoryBadgeHtml(prog.category)}</td>
             <td>${(prog.line_count || 0).toLocaleString()}</td>
             <td>${prog.complexity || 0}</td>
             <td>${prog.calls?.length || 0}</td>
@@ -1809,6 +1876,10 @@ function renderDetailContent(program) {
                     <div class="detail-info-label">전환 단계</div>
                     <div class="detail-info-value" style="font-size:0.9rem;">${phaseLabel}</div>
                 </div>
+                <div class="detail-info-item" style="grid-column: span 2;">
+                    <div class="detail-info-label">업무 카테고리</div>
+                    <div class="detail-info-value">${getCategoryBadgeHtml(program.category)}</div>
+                </div>
             </div>
         </div>
 
@@ -1883,6 +1954,378 @@ function renderDetailContent(program) {
     `;
 
     return html;
+}
+
+// ===================================
+// Category Summary (개요 탭)
+// ===================================
+
+let categoryChartInstance = null;
+
+function renderCategorySummary() {
+    const section = document.getElementById('categorySection');
+    const cardsContainer = document.getElementById('categorySummaryCards');
+    if (!section || !cardsContainer) return;
+
+    const categories = getUniqueCategories();
+    if (categories.length === 0) return;
+
+    section.style.display = 'block';
+
+    // 카테고리별 통계 계산
+    const validPrograms = state.programs.filter(p => p.name !== '.GITKEEP');
+    const catStats = categories.map((catName, idx) => {
+        const progs = validPrograms.filter(p => (p.category || '미분류') === catName);
+        const totalLines = progs.reduce((sum, p) => sum + (p.line_count || 0), 0);
+        const avgComplexity = progs.length > 0
+            ? (progs.reduce((sum, p) => sum + (p.complexity || 0), 0) / progs.length).toFixed(1)
+            : 0;
+        return { name: catName, count: progs.length, totalLines, avgComplexity, colorIdx: idx };
+    });
+
+    cardsContainer.innerHTML = catStats.map(cat => {
+        const c = getCategoryColor(cat.colorIdx);
+        return `
+        <div class="card category-summary-card" style="border-left: 4px solid ${c.color};">
+            <div class="category-card-header">
+                <span class="badge badge-category" style="background:${c.bg};color:${c.color}">${escapeHtml(cat.name)}</span>
+            </div>
+            <div class="category-card-stats">
+                <div class="category-stat">
+                    <span class="category-stat-value">${cat.count}</span>
+                    <span class="category-stat-label">프로그램</span>
+                </div>
+                <div class="category-stat">
+                    <span class="category-stat-value">${cat.totalLines.toLocaleString()}</span>
+                    <span class="category-stat-label">라인</span>
+                </div>
+                <div class="category-stat">
+                    <span class="category-stat-value">${cat.avgComplexity}</span>
+                    <span class="category-stat-label">평균 복잡도</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    // 도넛 차트 렌더링
+    renderCategoryChart(catStats);
+}
+
+function renderCategoryChart(catStats) {
+    const canvas = document.getElementById('categoryChart');
+    if (!canvas) return;
+
+    const { textColor } = getChartColors();
+
+    if (categoryChartInstance) categoryChartInstance.destroy();
+
+    const total = catStats.reduce((sum, c) => sum + c.count, 0);
+    const centerEl = document.getElementById('categoryDoughnutCenter');
+    if (centerEl) {
+        centerEl.style.display = 'block';
+        document.getElementById('categoryDoughnutTotal').textContent = total;
+    }
+
+    categoryChartInstance = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: catStats.map(c => c.name),
+            datasets: [{
+                data: catStats.map(c => c.count),
+                backgroundColor: catStats.map(c => getCategoryColor(c.colorIdx).chartBg),
+                borderWidth: 0,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        font: { family: "'Pretendard Variable', Pretendard, sans-serif", size: 12 },
+                        padding: 16,
+                        usePointStyle: true,
+                        pointStyleWidth: 8
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ===================================
+// Category Filter Initialization
+// ===================================
+
+function initCategoryFilter() {
+    const container = document.getElementById('categoryFilterGroup');
+    if (!container) return;
+
+    const categories = getUniqueCategories();
+    container.innerHTML = categories.map(cat =>
+        `<label class="checkbox-label">
+            <input type="checkbox" value="${escapeHtml(cat)}" checked> ${escapeHtml(cat)}
+        </label>`
+    ).join('');
+}
+
+// ===================================
+// Role Toggle (역할별 뷰 전환)
+// ===================================
+
+function initRoleToggle() {
+    const roleToggle = document.getElementById('roleToggle');
+    if (!roleToggle) return;
+
+    // Load saved role from localStorage
+    const savedRole = localStorage.getItem('catm_role') || 'executive';
+
+    // Apply saved role
+    const buttons = roleToggle.querySelectorAll('.role-btn');
+    buttons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.role === savedRole);
+        btn.addEventListener('click', () => {
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const role = btn.dataset.role;
+            localStorage.setItem('catm_role', role);
+            updateRoleView(role);
+        });
+    });
+
+    // Initial view update
+    updateRoleView(savedRole);
+}
+
+function updateRoleView(role) {
+    // Update summary cards visibility based on role
+    const summaryCards = document.querySelector('.summary-cards');
+    const phaseSection = document.querySelector('.phase-section');
+    const chartsSection = document.querySelector('.charts-section');
+    const riskSection = document.getElementById('riskSection');
+
+    // Reset all sections to visible
+    if (summaryCards) summaryCards.style.display = '';
+    if (phaseSection) phaseSection.style.display = '';
+    if (chartsSection) chartsSection.style.display = '';
+    if (riskSection) riskSection.style.display = '';
+
+    // Role-specific adjustments
+    switch (role) {
+        case 'executive':
+            // Executive view - show progress and risks
+            showExecutiveKPI();
+            break;
+        case 'planner':
+            // Planner view - focus on phases and priorities
+            showPlannerKPI();
+            break;
+        case 'architect':
+            // Architect view - focus on dependencies and tech debt
+            showArchitectKPI();
+            break;
+        case 'developer':
+            // Developer view - focus on work items
+            showDeveloperKPI();
+            break;
+    }
+}
+
+function showExecutiveKPI() {
+    updateRoleKPISection('executive', `
+        <div class="role-kpi-title">📊 경영진 대시보드</div>
+        <div class="role-kpi-cards">
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getConversionProgress()}%</div>
+                <div class="kpi-label">전환 진행률</div>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${getConversionProgress()}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getRiskLevel()}</div>
+                <div class="kpi-label">리스크 레벨</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getPhase1Count()}</div>
+                <div class="kpi-label">즉시 전환 가능</div>
+                <div class="kpi-change positive">Phase 1 프로그램</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getEstimatedDays()}일</div>
+                <div class="kpi-label">예상 완료 기간</div>
+            </div>
+        </div>
+    `);
+}
+
+function showPlannerKPI() {
+    updateRoleKPISection('planner', `
+        <div class="role-kpi-title">📋 기획자 대시보드</div>
+        <div class="role-kpi-cards">
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getPhase1Count()}</div>
+                <div class="kpi-label">Phase 1 (즉시)</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getPhase2Count()}</div>
+                <div class="kpi-label">Phase 2 (3개월)</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getPhase3Count()}</div>
+                <div class="kpi-label">Phase 3 (6개월)</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getAutoConvertCount()}</div>
+                <div class="kpi-label">자동 변환 권장</div>
+                <div class="kpi-change positive">빠른 전환 가능</div>
+            </div>
+        </div>
+    `);
+}
+
+function showArchitectKPI() {
+    updateRoleKPISection('architect', `
+        <div class="role-kpi-title">🏗️ 설계자 대시보드</div>
+        <div class="role-kpi-cards">
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getHighComplexityCount()}</div>
+                <div class="kpi-label">고복잡도 프로그램</div>
+                <div class="kpi-change negative">복잡도 15 이상</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getTotalDependencies()}</div>
+                <div class="kpi-label">총 의존성 (CALL)</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getDB2Count()}</div>
+                <div class="kpi-label">DB2 사용</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getCICSCount()}</div>
+                <div class="kpi-label">CICS 사용</div>
+            </div>
+        </div>
+    `);
+}
+
+function showDeveloperKPI() {
+    updateRoleKPISection('developer', `
+        <div class="role-kpi-title">💻 개발자 대시보드</div>
+        <div class="role-kpi-cards">
+            <div class="role-kpi-card">
+                <div class="kpi-value">${state.programs.length}</div>
+                <div class="kpi-label">전체 프로그램</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getTotalLines().toLocaleString()}</div>
+                <div class="kpi-label">총 라인 수</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getCopybookCount()}</div>
+                <div class="kpi-label">COPYBOOK 참조</div>
+            </div>
+            <div class="role-kpi-card">
+                <div class="kpi-value">${getRewriteCount()}</div>
+                <div class="kpi-label">재작성 필요</div>
+                <div class="kpi-change negative">상세 검토 필요</div>
+            </div>
+        </div>
+    `);
+}
+
+function updateRoleKPISection(role, html) {
+    let section = document.getElementById('roleKPISection');
+    if (!section) {
+        section = document.createElement('section');
+        section.id = 'roleKPISection';
+        section.className = 'role-kpi-section';
+        const summaryCards = document.querySelector('.summary-cards');
+        if (summaryCards) {
+            summaryCards.before(section);
+        }
+    }
+    section.innerHTML = html;
+}
+
+// Helper functions for KPI calculations
+function getConversionProgress() {
+    const phase1 = getPhase1Count();
+    const total = state.programs.length || 1;
+    return Math.round((phase1 / total) * 100);
+}
+
+function getRiskLevel() {
+    const highComplexity = getHighComplexityCount();
+    if (highComplexity === 0) return '낮음 ✅';
+    if (highComplexity <= 2) return '중간 ⚠️';
+    return '높음 🔴';
+}
+
+function getPhase1Count() {
+    return state.programs.filter(p => {
+        const score = p.scores?.final || 0;
+        return score <= CONFIG.phaseThresholds.phase1.max;
+    }).length;
+}
+
+function getPhase2Count() {
+    return state.programs.filter(p => {
+        const score = p.scores?.final || 0;
+        return score > CONFIG.phaseThresholds.phase1.max && score <= CONFIG.phaseThresholds.phase2.max;
+    }).length;
+}
+
+function getPhase3Count() {
+    return state.programs.filter(p => {
+        const score = p.scores?.final || 0;
+        return score > CONFIG.phaseThresholds.phase2.max;
+    }).length;
+}
+
+function getEstimatedDays() {
+    const phase1 = getPhase1Count();
+    const phase2 = getPhase2Count();
+    const phase3 = getPhase3Count();
+    return phase1 * 5 + phase2 * 15 + phase3 * 30;
+}
+
+function getAutoConvertCount() {
+    return state.programs.filter(p => p.recommendation?.method === '자동 변환').length;
+}
+
+function getHighComplexityCount() {
+    return state.programs.filter(p => (p.complexity || 0) >= 15).length;
+}
+
+function getTotalDependencies() {
+    return state.programs.reduce((sum, p) => sum + (p.calls?.length || 0), 0);
+}
+
+function getDB2Count() {
+    return state.programs.filter(p => p.has_db2).length;
+}
+
+function getCICSCount() {
+    return state.programs.filter(p => p.has_cics).length;
+}
+
+function getTotalLines() {
+    return state.programs.reduce((sum, p) => sum + (p.line_count || 0), 0);
+}
+
+function getCopybookCount() {
+    return state.programs.reduce((sum, p) => sum + (p.copies?.length || 0), 0);
+}
+
+function getRewriteCount() {
+    return state.programs.filter(p => p.recommendation?.method === '재작성').length;
 }
 
 document.addEventListener('DOMContentLoaded', init);

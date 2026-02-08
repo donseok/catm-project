@@ -26,7 +26,8 @@
       "paragraph_count": 8,
       "has_cics": false,
       "has_db2": true,
-      "has_vsam": true
+      "has_vsam": true,
+      "category": "조업업무"
     },
     {
       "name": "PGM002",
@@ -57,7 +58,8 @@
       "paragraph_count": 10,
       "has_cics": false,
       "has_db2": true,
-      "has_vsam": true
+      "has_vsam": true,
+      "category": "출하업무"
     }
   ],
   "jcl_jobs": [],
@@ -74,5 +76,25 @@
     "db2_programs": 2,
     "vsam_programs": 2
   },
-  "scan_date": "2026-02-08T17:54:08.045673"
+  "categories_summary": [
+    {
+      "name": "조업업무",
+      "program_count": 1,
+      "total_lines": 116,
+      "avg_complexity": 12.0,
+      "programs": [
+        "PGM001"
+      ]
+    },
+    {
+      "name": "출하업무",
+      "program_count": 1,
+      "total_lines": 167,
+      "avg_complexity": 18.0,
+      "programs": [
+        "PGM002"
+      ]
+    }
+  ],
+  "scan_date": "2026-02-08T18:38:47.999706"
 }
