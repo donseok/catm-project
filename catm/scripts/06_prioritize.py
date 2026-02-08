@@ -14,6 +14,7 @@
 import sys
 import os
 import json
+import re
 import time
 
 # pip install -e . 로 설치되지 않은 환경을 위한 폴백
@@ -135,8 +136,8 @@ def call_claude_for_priority(scored_data: list[dict], config: dict) -> str:
             if md_file.endswith(".md"):
                 fpath = os.path.join(docs_dir, md_file)
                 with open(fpath, "r", encoding="utf-8") as f:
-                    # 첫 30줄만 (프로그램 개요)
-                    content = "\n".join(f.readlines()[:30])
+                    # 첫 80줄 (개요 + 비즈니스 규칙 + MES 관련도)
+                    content = "\n".join(f.readlines()[:80])
                 logic_summaries += f"\n### {md_file}\n{content}\n"
     
     prompt = prompt.replace("{{BUSINESS_LOGIC_SUMMARY}}", logic_summaries or "(아직 생성되지 않음)")
@@ -150,6 +151,57 @@ def call_claude_for_priority(scored_data: list[dict], config: dict) -> str:
         max_retries=config["claude"].get("max_retries", 3),
         retry_delay=config["claude"].get("retry_delay_seconds", 30),
     )
+
+
+def parse_claude_scores(claude_response: str) -> dict:
+    """Claude 응답에서 비즈니스 중요도 JSON을 파싱
+
+    Returns:
+        {"PGM001": {"business_importance": 8, "phase": 1, "reason": "..."}, ...}
+    """
+    # ```json ... ``` 블록 추출
+    json_match = re.search(r"```json\s*\n(.*?)```", claude_response, re.DOTALL)
+    if not json_match:
+        return {}
+
+    try:
+        data = json.loads(json_match.group(1).strip())
+        return data.get("scores", {})
+    except (json.JSONDecodeError, AttributeError):
+        return {}
+
+
+def apply_claude_scores(scored: list[dict], claude_scores: dict, config: dict) -> list[dict]:
+    """Claude가 평가한 비즈니스 중요도를 반영하여 최종 점수 재계산"""
+    weights = config["priority_weights"]
+
+    for item in scored:
+        name = item["name"]
+        if name in claude_scores:
+            cs = claude_scores[name]
+            biz = cs.get("business_importance", item["scores"]["business_importance"])
+            # 1-10 범위 보정
+            biz = max(1, min(10, biz))
+            item["scores"]["business_importance"] = biz
+
+            # 최종 점수 재계산
+            sc = item["scores"]
+            sc["final"] = round(
+                biz * weights["business_importance"]
+                + sc["technical_complexity"] * weights["technical_complexity"]
+                + sc["dependency_impact"] * weights["dependency_impact"]
+                + sc["conversion_ease"] * weights["conversion_ease"],
+                2
+            )
+
+            # Phase 반영
+            phase = cs.get("phase")
+            if phase:
+                item["recommendation"]["phase"] = f"Phase {phase}"
+
+    # 재정렬 (최종 점수 내림차순)
+    scored.sort(key=lambda x: x["scores"]["final"], reverse=True)
+    return scored
 
 
 def generate_priority_report(scored: list[dict]) -> str:
@@ -219,9 +271,8 @@ def generate_priority_report(scored: list[dict]) -> str:
 
 ---
 
-> ⚡ 이 보고서의 비즈니스 중요도는 기본값(5)입니다.
-> Claude Code 분석으로 비즈니스 로직을 해석한 후 수동으로 조정하거나,
-> 06_prioritize.py의 Claude 분석 결과를 반영하세요.
+> ⚡ 비즈니스 중요도는 Claude Code가 분석 문서를 기반으로 자동 평가합니다.
+> JSON 파싱 실패 시 기본값(5)이 사용됩니다.
 """
     
     return md
@@ -260,7 +311,15 @@ def main():
     # Claude 응답 저장
     claude_md_path = os.path.join(output_root, "reports", "claude_priority_analysis.md")
     save_markdown(claude_response, claude_md_path)
-    
+
+    # 2-1. Claude 응답에서 비즈니스 중요도 파싱 및 반영
+    claude_scores = parse_claude_scores(claude_response)
+    if claude_scores:
+        print(f"  ✅ Claude 비즈니스 중요도 파싱 성공: {len(claude_scores)}개 프로그램")
+        scored = apply_claude_scores(scored, claude_scores, config)
+    else:
+        print("  ⚠️ Claude 응답에서 JSON 점수를 파싱하지 못했습니다. 기본값(5) 사용")
+
     # 3. 보고서 생성
     print("\n  📋 우선순위 매트릭스 보고서 생성 중...")
     report = generate_priority_report(scored)

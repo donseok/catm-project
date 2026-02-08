@@ -89,28 +89,69 @@ class CobolProgram:
 
 
 def clean_cobol_line(line: str) -> str:
-    """COBOL 고정 형식 라인에서 코드 영역만 추출"""
+    """COBOL 고정 형식 라인에서 코드 영역만 추출
+
+    컬럼 7 표시자:
+      ' ' → 일반 코드
+      '*', '/' → 주석 (빈 문자열 반환)
+      '-' → 연속 라인 (별도 처리 필요, 여기서는 코드 영역만 반환)
+    """
     if len(line) < 7:
         return ""
-    
-    # 컬럼 7이 * 또는 / 이면 주석
+
     indicator = line[6] if len(line) > 6 else " "
     if indicator in ("*", "/"):
         return ""
-    
+
     # 컬럼 8-72 추출 (0-based: index 7~71)
     code = line[7:72] if len(line) > 7 else ""
     return code.rstrip()
 
 
+def _is_continuation(line: str) -> bool:
+    """컬럼 7이 '-'인 연속 라인인지 확인"""
+    return len(line) > 6 and line[6] == "-"
+
+
+def merge_continuation_lines(source: str) -> str:
+    """연속 라인('-' indicator)을 이전 라인에 병합하여 반환
+
+    COBOL 고정 형식에서 컬럼 7이 '-'이면 이전 라인의 연속.
+    연속 라인의 코드 영역(컬럼 12~)을 이전 라인 끝에 이어붙임.
+    """
+    raw_lines = source.split("\n")
+    merged: list[str] = []
+
+    for line in raw_lines:
+        if _is_continuation(line):
+            # 연속 라인: 이전 라인에 병합
+            cont_code = line[11:72].rstrip() if len(line) > 11 else ""
+            if merged and cont_code:
+                # 이전 라인 끝의 불완전한 따옴표/공백 처리
+                prev = merged[-1].rstrip()
+                merged[-1] = prev + cont_code
+            elif cont_code:
+                merged.append(line)  # 이전 라인 없으면 그냥 추가
+        else:
+            merged.append(line)
+
+    return "\n".join(merged)
+
+
 def extract_code_lines(source: str) -> list[str]:
-    """소스 파일 → 코드 라인만 추출 (주석/시퀀스 제거)"""
+    """소스 파일 → 코드 라인만 추출 (주석/시퀀스 제거, 연속 라인 병합)"""
+    merged_source = merge_continuation_lines(source)
     lines = []
-    for line in source.split("\n"):
+    for line in merged_source.split("\n"):
         cleaned = clean_cobol_line(line)
         if cleaned:
             lines.append(cleaned)
     return lines
+
+
+def get_clean_source(source: str) -> str:
+    """원본 소스를 정제하여 코드만 반환 (주석 제거, 연속 라인 병합)"""
+    return "\n".join(extract_code_lines(source))
 
 
 def extract_program_id(source: str) -> str:
@@ -148,25 +189,33 @@ def extract_db2_tables(source: str) -> list[str]:
         r"EXEC\s+SQL(.*?)END-EXEC",
         source, re.IGNORECASE | re.DOTALL
     )
-    
+
     table_patterns = [
         r"\bFROM\s+([A-Z][A-Z0-9_.]+)",
-        r"\bINTO\s+([A-Z][A-Z0-9_.]+)",
         r"\bUPDATE\s+([A-Z][A-Z0-9_.]+)",
         r"\bINSERT\s+INTO\s+([A-Z][A-Z0-9_.]+)",
         r"\bDELETE\s+FROM\s+([A-Z][A-Z0-9_.]+)",
+        r"\bMERGE\s+INTO\s+([A-Z][A-Z0-9_.]+)",
+        # JOIN 패턴
+        r"\bJOIN\s+([A-Z][A-Z0-9_.]+)",
+        r"\bINNER\s+JOIN\s+([A-Z][A-Z0-9_.]+)",
+        r"\bLEFT\s+(?:OUTER\s+)?JOIN\s+([A-Z][A-Z0-9_.]+)",
+        r"\bRIGHT\s+(?:OUTER\s+)?JOIN\s+([A-Z][A-Z0-9_.]+)",
+        r"\bFULL\s+(?:OUTER\s+)?JOIN\s+([A-Z][A-Z0-9_.]+)",
     ]
-    
+
+    # SQL 키워드/COBOL 호스트 변수 제외 목록
+    exclude_prefixes = (":", "WS-", "SQLCA", "SQLCODE", "DCL")
+
     tables = []
     for block in sql_blocks:
         for pattern in table_patterns:
             matches = re.findall(pattern, block, re.IGNORECASE)
-            # COBOL 호스트 변수(:VAR) 제외
             tables.extend(
                 m.upper() for m in matches
-                if not m.startswith(":") and not m.startswith("WS-")
+                if not any(m.upper().startswith(p) for p in exclude_prefixes)
             )
-    
+
     return sorted(set(tables))
 
 
@@ -184,8 +233,22 @@ def extract_cics_maps(source: str) -> list[str]:
     return sorted(set(r.upper() for r in results))
 
 
+def extract_cics_calls(source: str) -> list[str]:
+    """CICS LINK/XCTL 프로그램 호출 추출"""
+    patterns = [
+        r"EXEC\s+CICS\s+LINK\s+PROGRAM\s*\(\s*'([A-Z0-9_-]+)'\s*\)",
+        r"EXEC\s+CICS\s+XCTL\s+PROGRAM\s*\(\s*'([A-Z0-9_-]+)'\s*\)",
+        r"EXEC\s+CICS\s+START\s+TRANSID\s*\(\s*'([A-Z0-9_-]+)'\s*\)",
+    ]
+    results = []
+    for pattern in patterns:
+        results.extend(re.findall(pattern, source, re.IGNORECASE))
+    return sorted(set(r.upper() for r in results))
+
+
 def calculate_complexity(source: str) -> int:
-    """McCabe 순환복잡도 근사 계산"""
+    """McCabe 순환복잡도 근사 계산 (주석 제거된 코드 기반)"""
+    clean = get_clean_source(source)
     decision_keywords = [
         r"\bIF\b", r"\bELSE\b", r"\bEVALUATE\b", r"\bWHEN\b",
         r"\bPERFORM\s+UNTIL\b", r"\bPERFORM\s+VARYING\b",
@@ -193,7 +256,7 @@ def calculate_complexity(source: str) -> int:
     ]
     complexity = 1  # 기본 경로
     for keyword in decision_keywords:
-        complexity += len(re.findall(keyword, source, re.IGNORECASE))
+        complexity += len(re.findall(keyword, clean, re.IGNORECASE))
     return complexity
 
 
@@ -271,32 +334,40 @@ def parse_copybook_fields(source: str) -> list[CobolField]:
 def analyze_program(file_path: str) -> CobolProgram:
     """단일 COBOL 프로그램 종합 분석"""
     path = Path(file_path)
-    
+
     with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
         source = f.read()
-    
+
     lines = source.split("\n")
-    
+
+    # 정제된 소스로 의존성 추출 (주석 내 키워드 오탐 방지)
+    clean = get_clean_source(source)
+
+    # CICS LINK/XCTL 호출을 CALL 목록에 병합
+    calls = extract_calls(clean)
+    cics_calls = extract_cics_calls(clean)
+    all_calls = sorted(set(calls + cics_calls))
+
     program = CobolProgram(
         name=path.stem.upper(),
         file_path=str(path),
         line_count=len(lines),
         program_id=extract_program_id(source),
-        calls=extract_calls(source),
-        copies=extract_copies(source),
-        db2_tables=extract_db2_tables(source),
-        vsam_files=extract_file_assigns(source),
-        cics_maps=extract_cics_maps(source),
+        calls=all_calls,
+        copies=extract_copies(clean),
+        db2_tables=extract_db2_tables(clean),
+        vsam_files=extract_file_assigns(clean),
+        cics_maps=extract_cics_maps(clean),
         complexity=calculate_complexity(source),
         paragraph_count=count_paragraphs(source),
     )
-    
+
     # 플래그 설정
     source_upper = source.upper()
     program.has_cics = "EXEC CICS" in source_upper
     program.has_db2 = "EXEC SQL" in source_upper
     program.has_vsam = len(program.vsam_files) > 0
-    
+
     return program
 
 

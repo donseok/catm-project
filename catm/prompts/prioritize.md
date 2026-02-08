@@ -42,6 +42,23 @@ MES(Manufacturing Execution System) 구축을 위해 COBOL 프로그램의 전�
 
 ## 출력 형식
 
+**중요**: 반드시 아래 두 가지를 모두 출력하세요.
+
+### A. 구조화된 점수 (파싱용 JSON)
+
+반드시 아래 형식의 JSON 블록을 포함하세요. 코드블록 태그는 ```json 으로 시작해야 합니다.
+
+```json
+{
+  "scores": {
+    "프로그램ID": {"business_importance": 숫자, "phase": 숫자, "reason": "근거 한줄"},
+    "프로그램ID": {"business_importance": 숫자, "phase": 숫자, "reason": "근거 한줄"}
+  }
+}
+```
+
+### B. 상세 분석 (마크다운)
+
 # 모더나이제이션 우선순위 - Claude 평가
 
 ## 비즈니스 중요도 재산정

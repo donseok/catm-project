@@ -3,11 +3,11 @@
     {
       "name": "PGM002",
       "scores": {
-        "business_importance": 5,
+        "business_importance": 7,
         "technical_complexity": 10,
         "dependency_impact": 10,
         "conversion_ease": 7,
-        "final": 7.65
+        "final": 8.35
       },
       "metrics": {
         "line_count": 167,
@@ -20,17 +20,17 @@
       },
       "recommendation": {
         "method": "자동 변환",
-        "phase": ""
+        "phase": "Phase 1"
       }
     },
     {
       "name": "PGM001",
       "scores": {
-        "business_importance": 5,
+        "business_importance": 8,
         "technical_complexity": 6.7,
         "dependency_impact": 7.1,
         "conversion_ease": 7,
-        "final": 6.25
+        "final": 7.29
       },
       "metrics": {
         "line_count": 116,
@@ -43,7 +43,7 @@
       },
       "recommendation": {
         "method": "자동 변환",
-        "phase": ""
+        "phase": "Phase 1"
       }
     }
   ]

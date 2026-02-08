@@ -22,6 +22,6 @@ graph TD
     PGM002 -.->|COPY| CPY_CPYLEDGR(CPYLEDGR)
     PGM002 <-->|SQL| DB_TB_INV_SUMMARY[(TB_INV_SUMMARY)]
 
-    class PGM001 mainPgm
     class PGM002 mainPgm
+    class PGM001 mainPgm
 ```

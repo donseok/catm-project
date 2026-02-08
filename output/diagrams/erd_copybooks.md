@@ -46,6 +46,17 @@ erDiagram
         string FILLER
     }
 
+    CPYSMRY {
+        string DS_PLANT_CD
+        number DS_PROD_DATE
+        number DS_TOTAL_QTY
+        number DS_TOTAL_COUNT
+        number DS_ERROR_COUNT
+        number DS_PROCESS_TIME
+        string DS_STATUS_CD
+        string FILLER
+    }
+
     CPYTRANS {
         string PT_PLANT_CD
         string PT_LINE_CD

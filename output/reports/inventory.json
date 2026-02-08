@@ -37,6 +37,12 @@
           "size_kb": 0.8
         },
         {
+          "name": "CPYSMRY",
+          "file": "src\\copybook\\CPYSMRY.cpy",
+          "lines": 19,
+          "size_kb": 0.9
+        },
+        {
           "name": "CPYTRANS",
           "file": "src\\copybook\\CPYTRANS.cpy",
           "lines": 25,
@@ -57,5 +63,5 @@
       "files": []
     }
   },
-  "scan_date": "2026-02-08T19:20:58.387406"
+  "scan_date": "2026-02-08T20:03:06.870438"
 }
