@@ -39,7 +39,7 @@ claude:
   mode: "cli"
   
   # Claude Code CLI 명령어
-  cli_command: "claude"
+  cli_command: "C:/Users/donse/AppData/Roaming/npm/claude.cmd"
   
   # 동시 분석 제한 (Max 20x라도 너무 빠르게 보내지 않기)
   max_concurrent: 3

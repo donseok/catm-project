@@ -123,7 +123,6 @@ async function loadOptionalData() {
 
     // 개요 탭 추가 데이터 렌더링
     renderExtraSummaryCards();
-    renderAnalysisStatus();
     renderRiskSummary();
 }
 
@@ -330,12 +329,11 @@ function renderExtraSummaryCards() {
 
 async function renderRiskSummary() {
     const riskSection = document.getElementById('riskSection');
-    const riskCards = document.getElementById('riskCards');
-    if (!riskSection || !riskCards) return;
+    const riskBrief = document.getElementById('riskBrief');
+    if (!riskSection || !riskBrief) return;
 
-    const risks = [];
+    const counts = { high: 0, medium: 0, info: 0 };
 
-    // 각 프로그램 문서에서 리스크 파싱
     const validPrograms = state.programs.filter(p => p.name !== '.GITKEEP');
     for (const prog of validPrograms) {
         try {
@@ -343,105 +341,34 @@ async function renderRiskSummary() {
             if (!resp.ok) continue;
             const md = await resp.text();
 
-            // "리스크" 또는 "특이사항" 섹션 찾기
             const riskMatch = md.match(/#{1,3}\s*\d*\.?\s*(특이사항|리스크|위험|Risk)[^\n]*\n([\s\S]*?)(?=\n#{1,3}\s|\n---|\z)/i);
             if (riskMatch) {
-                const riskText = riskMatch[2].trim();
-                const lines = riskText.split('\n').filter(l => l.trim().startsWith('-') || l.trim().startsWith('*') || l.trim().match(/^\d+\./));
+                const lines = riskMatch[2].trim().split('\n').filter(l => l.trim().startsWith('-') || l.trim().startsWith('*') || l.trim().match(/^\d+\./));
                 lines.forEach(line => {
                     const text = line.replace(/^[\s\-\*\d\.]+/, '').trim();
                     if (text.length > 5) {
                         const level = text.match(/높음|심각|critical|high/i) ? 'high' :
                             text.match(/중간|주의|medium|warning/i) ? 'medium' : 'info';
-                        risks.push({ program: prog.name, text, level });
+                        counts[level]++;
                     }
                 });
             }
         } catch (e) { /* 파일 없으면 무시 */ }
     }
 
-    if (risks.length === 0) return;
+    const total = counts.high + counts.medium + counts.info;
+    if (total === 0) return;
 
     riskSection.style.display = 'block';
-    const iconMap = { high: '!!', medium: '!', info: 'i' };
 
-    riskCards.innerHTML = risks.map(r => `
-        <div class="risk-card risk-${r.level}">
-            <div class="risk-icon">${iconMap[r.level]}</div>
-            <div class="risk-content">
-                <div class="risk-title">${escapeHtml(r.text.slice(0, 60))}${r.text.length > 60 ? '...' : ''}</div>
-                <div class="risk-desc">${escapeHtml(r.text)}</div>
-                <div class="risk-program">${r.program}</div>
-            </div>
-        </div>
-    `).join('');
+    const badges = [];
+    if (counts.high > 0) badges.push(`<span class="badge badge-fail">High ${counts.high}</span>`);
+    if (counts.medium > 0) badges.push(`<span class="badge badge-warning">Medium ${counts.medium}</span>`);
+    if (counts.info > 0) badges.push(`<span class="badge badge-success">Info ${counts.info}</span>`);
+
+    riskBrief.innerHTML = `<span class="risk-brief-text">총 ${total}건 ${badges.join(' ')}</span>`;
 }
 
-// ===================================
-// Analysis Status (개요 탭)
-// ===================================
-
-function renderAnalysisStatus() {
-    const section = document.getElementById('analysisStatusSection');
-    const container = document.getElementById('analysisStatus');
-    if (!section || !container || !state.analysisLog) return;
-
-    const log = state.analysisLog;
-    const results = log.results || [];
-    const totalElapsed = log.total_elapsed_seconds || 0;
-    const successCount = results.filter(r => r.status === 'success').length;
-    const failCount = results.filter(r => r.status !== 'success').length;
-    const maxElapsed = Math.max(...results.map(r => r.elapsed_seconds || 0), 1);
-
-    section.style.display = 'block';
-
-    const dateStr = log.start_time ?
-        new Date(log.start_time).toLocaleString('ko-KR') : '-';
-
-    container.innerHTML = `
-        <div class="analysis-status-header">
-            <div class="status-meta">
-                <div class="status-meta-item">
-                    <span class="status-meta-label">분석일시</span>
-                    <span class="status-meta-value">${dateStr}</span>
-                </div>
-                <div class="status-meta-item">
-                    <span class="status-meta-label">모드</span>
-                    <span class="status-meta-value">${log.mode || '-'}</span>
-                </div>
-                <div class="status-meta-item">
-                    <span class="status-meta-label">총 소요시간</span>
-                    <span class="status-meta-value">${totalElapsed.toFixed(1)}초</span>
-                </div>
-                <div class="status-meta-item">
-                    <span class="status-meta-label">결과</span>
-                    <span class="status-meta-value">
-                        <span class="badge badge-success">성공 ${successCount}</span>
-                        ${failCount > 0 ? `<span class="badge badge-fail">실패 ${failCount}</span>` : ''}
-                    </span>
-                </div>
-            </div>
-        </div>
-        <div class="analysis-bars">
-            ${results.map(r => {
-        const pct = Math.max(5, (r.elapsed_seconds / maxElapsed) * 100);
-        const statusBadge = r.status === 'success'
-            ? '<span class="badge badge-success">OK</span>'
-            : '<span class="badge badge-fail">FAIL</span>';
-        return `
-                <div class="analysis-bar-row">
-                    <span class="analysis-bar-label">${r.program || r.copybook || '-'}</span>
-                    <div class="analysis-bar-track">
-                        <div class="analysis-bar-fill" style="width:${pct}%">
-                            <span class="bar-time">${(r.elapsed_seconds || 0).toFixed(1)}s</span>
-                        </div>
-                    </div>
-                    <div class="analysis-bar-status">${statusBadge}</div>
-                </div>`;
-    }).join('')}
-        </div>
-    `;
-}
 
 // ===================================
 // Phase Classification
@@ -1486,6 +1413,8 @@ async function init() {
         initCategoryFilter();
         initPaginationControls();
         initDetailPanel();
+        initMdModal();
+        initRoleToggle(); // 뷰 전환 버튼 초기화
         // Mermaid, DataDict, Modernization은 탭 전환 시 lazy-load
     } else {
         // Clear skeletons and show error
@@ -1851,6 +1780,56 @@ function closeDetailPanel() {
     document.body.style.overflow = '';
 }
 
+// ===================================
+// Markdown Viewer Modal
+// ===================================
+
+function initMdModal() {
+    const overlay = document.getElementById('mdModalOverlay');
+    const closeBtn = document.getElementById('mdModalClose');
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeMdModal);
+    }
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeMdModal();
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeMdModal();
+    });
+}
+
+async function openMdModal(filePath, title) {
+    const overlay = document.getElementById('mdModalOverlay');
+    const titleEl = document.getElementById('mdModalTitle');
+    const bodyEl = document.getElementById('mdModalBody');
+    if (!overlay || !bodyEl) return;
+
+    if (titleEl) titleEl.textContent = title || '문서';
+    bodyEl.innerHTML = '<div class="md-modal-loading">로딩 중...</div>';
+
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    try {
+        const resp = await fetch(filePath);
+        if (!resp.ok) throw new Error('파일을 불러올 수 없습니다.');
+        const md = await resp.text();
+        bodyEl.innerHTML = typeof marked !== 'undefined' ? marked.parse(md) : `<pre>${escapeHtml(md)}</pre>`;
+    } catch (e) {
+        bodyEl.innerHTML = `<div class="md-modal-error">${escapeHtml(e.message)}</div>`;
+    }
+}
+
+function closeMdModal() {
+    const overlay = document.getElementById('mdModalOverlay');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
 function renderDetailContent(program) {
     const score = program.scores?.final || 0;
     const phase = getPhase(score);
@@ -1947,7 +1926,7 @@ function renderDetailContent(program) {
     html += `
         <div class="detail-section">
             <h3 class="detail-section-title">분석 문서</h3>
-            <button class="detail-btn" onclick="window.open('output/docs/${program.name}.md', '_blank')">
+            <button class="detail-btn" onclick="openMdModal('output/docs/${program.name}.md', '${program.name} 분석 문서')">
                 📄 ${program.name}.md 열기
             </button>
         </div>

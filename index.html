@@ -169,10 +169,10 @@
                 </div>
             </section>
 
-            <!-- Risk Summary -->
+            <!-- Risk Summary (간략) -->
             <section class="risk-section" id="riskSection" style="display:none;">
                 <h2 class="phase-section-title">리스크 요약</h2>
-                <div class="risk-cards" id="riskCards"></div>
+                <div class="risk-brief" id="riskBrief"></div>
             </section>
 
             <!-- Category Summary -->
@@ -215,11 +215,8 @@
                 </div>
             </section>
 
-            <!-- Analysis Status -->
-            <section class="analysis-status-section" id="analysisStatusSection" style="display:none;">
-                <h2 class="phase-section-title">분석 실행 상태</h2>
-                <div class="card analysis-status" id="analysisStatus"></div>
-            </section>
+
+
         </div>
 
         <!-- ========== Tab 2: Program Detail ========== -->
@@ -363,6 +360,17 @@
             </div>
         </div>
         <div class="detail-overlay" id="detailOverlay"></div>
+
+        <!-- Markdown Viewer Modal -->
+        <div class="md-modal-overlay" id="mdModalOverlay">
+            <div class="md-modal">
+                <div class="md-modal-header">
+                    <h2 class="md-modal-title" id="mdModalTitle">문서</h2>
+                    <button class="md-modal-close" id="mdModalClose">✕</button>
+                </div>
+                <div class="md-modal-body" id="mdModalBody"></div>
+            </div>
+        </div>
 
         <!-- ========== Tab 3: Data Dictionary ========== -->
         <div class="tab-panel" id="tab-datadict">
