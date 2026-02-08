@@ -1,0 +1,19 @@
+{
+  "analysis_date": "2026-02-08T17:46:00.552331",
+  "mode": "claude_code_max_20x_logic",
+  "total_files": 1,
+  "success": 1,
+  "errors": 0,
+  "total_elapsed_seconds": 64.6,
+  "results": [
+    {
+      "program": "PGM001",
+      "status": "success",
+      "elapsed_seconds": 64.6,
+      "output_file": "./output/docs/PGM001.md",
+      "copybooks_used": [
+        "CPYTRANS"
+      ]
+    }
+  ]
+}

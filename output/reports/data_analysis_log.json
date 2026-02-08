@@ -1,0 +1,16 @@
+{
+  "analysis_date": "2026-02-08T17:46:50.358833",
+  "mode": "claude_code_max_20x_data",
+  "total_files": 1,
+  "success": 1,
+  "errors": 0,
+  "total_elapsed_seconds": 45.9,
+  "results": [
+    {
+      "copybook": "CPYTRANS",
+      "status": "success",
+      "elapsed_seconds": 45.9,
+      "output_file": "./output/data-dict/CPYTRANS.md"
+    }
+  ]
+}

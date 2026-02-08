@@ -1,0 +1,71 @@
+{
+  "programs": [
+    {
+      "name": ".GITKEEP",
+      "file_path": "src/cobol/.gitkeep",
+      "line_count": 1,
+      "program_id": "",
+      "calls": [],
+      "copies": [],
+      "db2_tables": [],
+      "vsam_files": [],
+      "cics_maps": [],
+      "complexity": 1,
+      "paragraph_count": 0,
+      "has_cics": false,
+      "has_db2": false,
+      "has_vsam": false
+    },
+    {
+      "name": "PGM001",
+      "file_path": "src/cobol/PGM001.cbl",
+      "line_count": 116,
+      "program_id": "PGM001",
+      "calls": [
+        "ABNDPGM",
+        "ERRLOG",
+        "SQLERR"
+      ],
+      "copies": [
+        "CPYSMRY",
+        "CPYTRANS"
+      ],
+      "db2_tables": [
+        "TB_DAILY_PROD"
+      ],
+      "vsam_files": [
+        "DLYSMRY",
+        "PRODTRAN"
+      ],
+      "cics_maps": [],
+      "complexity": 12,
+      "paragraph_count": 0,
+      "has_cics": false,
+      "has_db2": true,
+      "has_vsam": true
+    }
+  ],
+  "jcl_jobs": [
+    {
+      "job_name": ".GITKEEP",
+      "file_path": "src/jcl/.gitkeep",
+      "steps": [],
+      "datasets": [],
+      "step_count": 0
+    }
+  ],
+  "summary": {
+    "total_programs": 2,
+    "total_lines": 117,
+    "total_jcl_jobs": 1,
+    "avg_complexity": 6.5,
+    "max_complexity": 12,
+    "unique_copybooks": 2,
+    "unique_db2_tables": 1,
+    "unique_vsam_files": 2,
+    "cics_programs": 0,
+    "db2_programs": 1,
+    "vsam_programs": 1
+  },
+  "scan_date": "2026-02-08T16:55:01.099971"
+}

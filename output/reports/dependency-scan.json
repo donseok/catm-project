@@ -1,0 +1,47 @@
+{
+  "programs": [
+    {
+      "name": "PGM001",
+      "file_path": "src/cobol/PGM001.cbl",
+      "line_count": 116,
+      "program_id": "PGM001",
+      "calls": [
+        "ABNDPGM",
+        "ERRLOG",
+        "SQLERR"
+      ],
+      "copies": [
+        "CPYSMRY",
+        "CPYTRANS"
+      ],
+      "db2_tables": [
+        "TB_DAILY_PROD"
+      ],
+      "vsam_files": [
+        "DLYSMRY",
+        "PRODTRAN"
+      ],
+      "cics_maps": [],
+      "complexity": 12,
+      "paragraph_count": 8,
+      "has_cics": false,
+      "has_db2": true,
+      "has_vsam": true
+    }
+  ],
+  "jcl_jobs": [],
+  "summary": {
+    "total_programs": 1,
+    "total_lines": 116,
+    "total_jcl_jobs": 0,
+    "avg_complexity": 12.0,
+    "max_complexity": 12,
+    "unique_copybooks": 2,
+    "unique_db2_tables": 1,
+    "unique_vsam_files": 2,
+    "cics_programs": 0,
+    "db2_programs": 1,
+    "vsam_programs": 1
+  },
+  "scan_date": "2026-02-08T17:40:25.903219"
+}

@@ -1,0 +1,27 @@
+{
+  "scored_programs": [
+    {
+      "name": "PGM001",
+      "scores": {
+        "business_importance": 5,
+        "technical_complexity": 10,
+        "dependency_impact": 10,
+        "conversion_ease": 7,
+        "final": 7.65
+      },
+      "metrics": {
+        "line_count": 116,
+        "complexity": 12,
+        "calls": 3,
+        "copies": 2,
+        "db2_tables": 1,
+        "has_cics": false,
+        "has_db2": true
+      },
+      "recommendation": {
+        "method": "자동 변환",
+        "phase": ""
+      }
+    }
+  ]
+}

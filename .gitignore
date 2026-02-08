@@ -5,10 +5,8 @@ __pycache__/
 .venv/
 venv/
 
-# 분석 결과 (output 내 .gitkeep만 추적)
-output/**
-!output/.gitkeep
-!output/**/.gitkeep
+# 분석 결과 (추적 대상)
+# output/
 
 # OS
 .DS_Store

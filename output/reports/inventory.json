@@ -1,0 +1,37 @@
+{
+  "categories": {
+    "COBOL 프로그램": {
+      "files": [
+        {
+          "name": "PGM001",
+          "file": "src/cobol/PGM001.cbl",
+          "lines": 115,
+          "size_kb": 8.0
+        }
+      ]
+    },
+    "COPYBOOK": {
+      "files": [
+        {
+          "name": "CPYTRANS",
+          "file": "src/copybook/CPYTRANS.cpy",
+          "lines": 25,
+          "size_kb": 1.8
+        }
+      ]
+    },
+    "JCL": {
+      "files": []
+    },
+    "PROC": {
+      "files": []
+    },
+    "DCLGEN": {
+      "files": []
+    },
+    "DB2 DDL": {
+      "files": []
+    }
+  },
+  "scan_date": "2026-02-08T17:40:25.859556"
+}
