@@ -87,6 +87,13 @@ python catm/scripts/01_scan_inventory.py
   - `find_files()`: 숨김파일(`.gitkeep` 등) 자동 제외
   - `load_config()`: `Path(__file__)` 기준 상대 경로로 설정 로드 (실행 위치 무관)
 
+## 프로그램 카테고리
+- `catm_config.yaml`의 `program_categories`에서 업무 카테고리 관리
+- `02_extract_dependencies.py`가 `dependency-scan.json`에 프로그램별 `category` 필드와 `categories_summary` 섹션 생성
+- 카테고리 미지정 프로그램은 `"미분류"`로 표시
+- 데이터 흐름: `catm_config.yaml` → `02_extract_dependencies.py` → `dependency-scan.json` → 대시보드 (`app.js`)
+- 대시보드 기능: 카테고리 컬럼/배지, 카테고리 필터, 카테고리순 정렬, 개요 탭 카테고리별 요약 카드 + 도넛 차트
+
 ## 주의사항
 - `dependency-scan.json`은 `output/reports/` 아래에 생성됨 (`output/` 루트 아님)
 - `catm.sh`는 `set -e` 사용 중이므로, 에러 핸들링은 `if python3 ...; then` 패턴 사용
