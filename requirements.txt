@@ -1,0 +1,14 @@
+# CATM - COBOL Analysis Task Manager
+# Python 3.11+ 필요
+
+# 설정 관리
+pyyaml>=6.0
+
+# 파일 처리
+chardet>=5.0        # EBCDIC 인코딩 감지
+
+# 테스트
+pytest>=7.0
+
+# (선택) 결과 시각화
+# mermaid-py>=0.3   # Mermaid → PNG 변환 시

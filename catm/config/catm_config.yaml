@@ -1,0 +1,102 @@
+# ===========================================
+#  CATM Configuration
+#  COBOL Analysis Task Manager 설정
+# ===========================================
+
+# --- 프로젝트 경로 설정 ---
+paths:
+  # 소스코드 루트 디렉토리
+  source_root: "./src"
+  # 분석 결과 출력 디렉토리
+  output_root: "./output"
+  # 프롬프트 템플릿 디렉토리
+  prompts_dir: "./catm/prompts"
+
+# --- 소스 디렉토리 매핑 ---
+source_dirs:
+  cobol: "cobol"          # *.cbl, *.cob
+  copybook: "copybook"    # *.cpy
+  jcl: "jcl"              # *.jcl
+  proc: "proc"            # *.prc
+  dclgen: "dclgen"        # DCLGEN 파일
+  ddl: "ddl"              # DB2 DDL
+  map: "map"              # CICS BMS MAP
+
+# --- 파일 확장자 매핑 ---
+file_extensions:
+  cobol: [".cbl", ".cob", ".cobol", ""]
+  copybook: [".cpy", ".copy", ""]
+  jcl: [".jcl", ""]
+  proc: [".prc", ".proc", ""]
+
+# --- Claude Code 설정 (Max 20x 구독) ---
+claude:
+  # Claude Code CLI 실행 방식
+  # Max 20x 구독이므로 API key 불필요
+  # claude CLI가 PATH에 있어야 함
+  
+  # 실행 모드: "cli" (Max 구독) 또는 "api" (API key 필요)
+  mode: "cli"
+  
+  # Claude Code CLI 명령어
+  cli_command: "claude"
+  
+  # 동시 분석 제한 (Max 20x라도 너무 빠르게 보내지 않기)
+  max_concurrent: 3
+  
+  # 프로그램당 최대 대기 시간 (초)
+  timeout_per_program: 300
+  
+  # 재시도 횟수 (rate limit 시)
+  max_retries: 3
+  retry_delay_seconds: 30
+  
+  # 분석 배치 크기 (한 번에 분석할 프로그램 수)
+  batch_size: 5
+  
+  # 배치 간 대기 시간 (초) - rate limit 방지
+  batch_delay_seconds: 10
+
+# --- 정적 분석 설정 ---
+static_analysis:
+  # COBOL 컬럼 규칙
+  cobol_format: "fixed"     # fixed (1-80) 또는 free
+  code_start_col: 7         # 코드 시작 컬럼 (0-based: 7 = 8번째 위치)
+  code_end_col: 72          # 코드 끝 컬럼
+  
+  # 복잡도 임계값
+  complexity_threshold:
+    low: 10
+    medium: 25
+    high: 50
+
+# --- 모더나이제이션 우선순위 가중치 ---
+priority_weights:
+  business_importance: 0.35   # 비즈니스 중요도
+  technical_complexity: 0.25  # 기술 복잡도
+  dependency_impact: 0.20     # 의존성 영향도
+  conversion_ease: 0.20       # 전환 용이도
+
+# --- 출력 설정 ---
+output:
+  # 마크다운 문서 설정
+  docs_dir: "docs"
+  diagrams_dir: "diagrams"
+  data_dict_dir: "data-dict"
+  reports_dir: "reports"
+  
+  # Mermaid 다이어그램 테마
+  mermaid_theme: "default"
+  
+  # 다이어그램 자동 생성 대상
+  generate_diagrams:
+    call_graph: true          # 프로그램 호출 관계도
+    jcl_flow: true            # JCL 배치 흐름도
+    data_flow: true           # 데이터 흐름도
+    erd: true                 # ERD (DB2 테이블)
+
+# --- 로그 설정 ---
+logging:
+  level: "INFO"               # DEBUG, INFO, WARNING, ERROR
+  file: "./output/catm.log"
+  console: true

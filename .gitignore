@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 분석 결과 (output 내 .gitkeep만 추적)
+output/**
+!output/.gitkeep
+!output/**/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 로그
+*.log
+catm.log
+
+# pytest
+.pytest_cache/
+
+# 노드
+node_modules/

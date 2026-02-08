@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "catm"
+version = "0.1.0"
+description = "COBOL Analysis Task Manager - IBM 메인프레임 COBOL 레거시 자동 분석 도구"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+    "chardet>=5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["catm*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
