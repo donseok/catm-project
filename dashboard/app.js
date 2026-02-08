@@ -44,7 +44,24 @@ let state = {
     graphView: 'call', // 'call' or 'dataflow'
     dataLoaded: false,
     expandedProgram: null, // 현재 펼쳐진 프로그램명
-    programDocsCache: {} // 프로그램 문서 캐시
+    programDocsCache: {}, // 프로그램 문서 캐시
+    // Pagination state
+    currentPage: 1,
+    pageSize: 50,
+    filteredPrograms: [],
+    // Filter state
+    filters: {
+        complexityMin: 0,
+        complexityMax: 100,
+        linesMin: 0,
+        linesMax: 10000,
+        showDB2: true,
+        showCICS: true,
+        showVSAM: true,
+        showPhase1: true,
+        showPhase2: true,
+        showPhase3: true
+    }
 };
 
 // ===================================
@@ -1424,9 +1441,12 @@ async function init() {
     if (loaded) {
         renderSummaryCards();
         renderPhaseCards();
-        renderProgramTable();
+        applyFiltersAndRender(); // Use new filter-based rendering
         renderPriorityChart();
         renderTechChart();
+        initFilterControls();
+        initPaginationControls();
+        initDetailPanel();
         // Mermaid, DataDict, Modernization은 탭 전환 시 lazy-load
     } else {
         // Clear skeletons and show error
@@ -1439,11 +1459,430 @@ async function init() {
             if (el) el.innerHTML = '<span style="color:var(--text-muted);font-size:0.85rem;">데이터 없음</span>';
         });
         document.getElementById('programTableBody').innerHTML = `
-            <tr class="no-data-row"><td colspan="9">
+            <tr class="no-data-row"><td colspan="10">
                 데이터를 불러올 수 없습니다. CATM 분석을 먼저 실행하세요.
             </td></tr>
         `;
     }
+}
+
+// ===================================
+// Advanced Filter Controls
+// ===================================
+
+function initFilterControls() {
+    const filterToggleBtn = document.getElementById('filterToggleBtn');
+    const filterPanel = document.getElementById('filterPanel');
+    const applyFilterBtn = document.getElementById('applyFilterBtn');
+    const resetFilterBtn = document.getElementById('resetFilterBtn');
+
+    if (filterToggleBtn && filterPanel) {
+        filterToggleBtn.addEventListener('click', () => {
+            const isVisible = filterPanel.style.display !== 'none';
+            filterPanel.style.display = isVisible ? 'none' : 'block';
+            filterToggleBtn.classList.toggle('active', !isVisible);
+        });
+    }
+
+    if (applyFilterBtn) {
+        applyFilterBtn.addEventListener('click', () => {
+            readFiltersFromUI();
+            state.currentPage = 1;
+            applyFiltersAndRender();
+        });
+    }
+
+    if (resetFilterBtn) {
+        resetFilterBtn.addEventListener('click', () => {
+            resetFilters();
+            state.currentPage = 1;
+            applyFiltersAndRender();
+        });
+    }
+}
+
+function readFiltersFromUI() {
+    state.filters.complexityMin = parseInt(document.getElementById('complexityMin')?.value || 0);
+    state.filters.complexityMax = parseInt(document.getElementById('complexityMax')?.value || 100);
+    state.filters.linesMin = parseInt(document.getElementById('linesMin')?.value || 0);
+    state.filters.linesMax = parseInt(document.getElementById('linesMax')?.value || 10000);
+    state.filters.showDB2 = document.getElementById('filterDB2')?.checked ?? true;
+    state.filters.showCICS = document.getElementById('filterCICS')?.checked ?? true;
+    state.filters.showVSAM = document.getElementById('filterVSAM')?.checked ?? true;
+    state.filters.showPhase1 = document.getElementById('filterPhase1')?.checked ?? true;
+    state.filters.showPhase2 = document.getElementById('filterPhase2')?.checked ?? true;
+    state.filters.showPhase3 = document.getElementById('filterPhase3')?.checked ?? true;
+}
+
+function resetFilters() {
+    document.getElementById('complexityMin').value = 0;
+    document.getElementById('complexityMax').value = 100;
+    document.getElementById('linesMin').value = 0;
+    document.getElementById('linesMax').value = 10000;
+    document.getElementById('filterDB2').checked = true;
+    document.getElementById('filterCICS').checked = true;
+    document.getElementById('filterVSAM').checked = true;
+    document.getElementById('filterPhase1').checked = true;
+    document.getElementById('filterPhase2').checked = true;
+    document.getElementById('filterPhase3').checked = true;
+
+    state.filters = {
+        complexityMin: 0,
+        complexityMax: 100,
+        linesMin: 0,
+        linesMax: 10000,
+        showDB2: true,
+        showCICS: true,
+        showVSAM: true,
+        showPhase1: true,
+        showPhase2: true,
+        showPhase3: true
+    };
+}
+
+function getPhase(score) {
+    const t = CONFIG.phaseThresholds;
+    if (score <= t.phase1.max) return 1;
+    if (score <= t.phase2.max) return 2;
+    return 3;
+}
+
+function applyFiltersAndRender() {
+    const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase() || '';
+    const sortBy = document.getElementById('sortSelect')?.value || 'name';
+    const f = state.filters;
+
+    // Apply filters
+    let filtered = state.programs.filter(prog => {
+        if (prog.name === '.GITKEEP') return false;
+        if (!prog.name.toLowerCase().includes(searchTerm)) return false;
+
+        const complexity = prog.complexity || 0;
+        const lines = prog.line_count || 0;
+        const score = prog.scores?.final || 0;
+        const phase = getPhase(score);
+
+        if (complexity < f.complexityMin || complexity > f.complexityMax) return false;
+        if (lines < f.linesMin || lines > f.linesMax) return false;
+
+        // Tech filter - if none checked, show all
+        const anyTechChecked = f.showDB2 || f.showCICS || f.showVSAM;
+        if (anyTechChecked) {
+            const hasDB2 = prog.has_db2;
+            const hasCICS = prog.has_cics;
+            const hasVSAM = prog.has_vsam;
+            const noTech = !hasDB2 && !hasCICS && !hasVSAM;
+
+            if (!noTech) {
+                if (hasDB2 && !f.showDB2) return false;
+                if (hasCICS && !f.showCICS) return false;
+                if (hasVSAM && !f.showVSAM) return false;
+            }
+        }
+
+        // Phase filter
+        if (phase === 1 && !f.showPhase1) return false;
+        if (phase === 2 && !f.showPhase2) return false;
+        if (phase === 3 && !f.showPhase3) return false;
+
+        return true;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+        switch (sortBy) {
+            case 'complexity': return (b.complexity || 0) - (a.complexity || 0);
+            case 'lines': return (b.line_count || 0) - (a.line_count || 0);
+            case 'score': return (b.scores?.final || 0) - (a.scores?.final || 0);
+            default: return a.name.localeCompare(b.name);
+        }
+    });
+
+    state.filteredPrograms = filtered;
+    renderPaginatedTable();
+    updatePaginationUI();
+}
+
+// ===================================
+// Pagination Controls
+// ===================================
+
+function initPaginationControls() {
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+
+    if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', (e) => {
+            state.pageSize = parseInt(e.target.value);
+            state.currentPage = 1;
+            renderPaginatedTable();
+            updatePaginationUI();
+        });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (state.currentPage > 1) {
+                state.currentPage--;
+                renderPaginatedTable();
+                updatePaginationUI();
+            }
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(state.filteredPrograms.length / state.pageSize);
+            if (state.currentPage < totalPages) {
+                state.currentPage++;
+                renderPaginatedTable();
+                updatePaginationUI();
+            }
+        });
+    }
+
+    // Search input with debounce
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        let debounceTimer;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                state.currentPage = 1;
+                applyFiltersAndRender();
+            }, 300);
+        });
+    }
+
+    // Sort select
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', () => {
+            state.currentPage = 1;
+            applyFiltersAndRender();
+        });
+    }
+}
+
+function renderPaginatedTable() {
+    const tbody = document.getElementById('programTableBody');
+    if (!tbody) return;
+
+    const startIdx = (state.currentPage - 1) * state.pageSize;
+    const endIdx = startIdx + state.pageSize;
+    const pageData = state.filteredPrograms.slice(startIdx, endIdx);
+
+    if (pageData.length === 0) {
+        tbody.innerHTML = `<tr class="no-data-row"><td colspan="10">
+            검색 결과가 없습니다.
+        </td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = pageData.map(prog => {
+        const method = prog.recommendation?.method || '';
+        const badgeClass = getMethodBadgeClass(method);
+
+        return `
+        <tr>
+            <td><strong>${prog.name}</strong></td>
+            <td>${(prog.line_count || 0).toLocaleString()}</td>
+            <td>${prog.complexity || 0}</td>
+            <td>${prog.calls?.length || 0}</td>
+            <td>${prog.copies?.length || 0}</td>
+            <td>${prog.has_db2 ? '<span class="check-icon">&#10003;</span>' : '<span class="cross-icon">&mdash;</span>'}</td>
+            <td>${prog.has_cics ? '<span class="check-icon">&#10003;</span>' : '<span class="cross-icon">&mdash;</span>'}</td>
+            <td>${prog.scores?.final ? `<span class="badge badge-score">${prog.scores.final.toFixed(1)}</span>` : '<span class="cross-icon">&mdash;</span>'}</td>
+            <td>${method ? `<span class="badge ${badgeClass}">${method}</span>` : '<span class="cross-icon">&mdash;</span>'}</td>
+            <td><button class="view-detail-btn" onclick="openDetailPanel('${prog.name}')">상세</button></td>
+        </tr>`;
+    }).join('');
+}
+
+function updatePaginationUI() {
+    const total = state.filteredPrograms.length;
+    const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+    const startIdx = (state.currentPage - 1) * state.pageSize + 1;
+    const endIdx = Math.min(state.currentPage * state.pageSize, total);
+
+    const paginationInfo = document.getElementById('paginationInfo');
+    const pageNumber = document.getElementById('pageNumber');
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+
+    if (paginationInfo) {
+        paginationInfo.textContent = total > 0 ? `${total}개 중 ${startIdx}-${endIdx}` : '0개';
+    }
+    if (pageNumber) {
+        pageNumber.textContent = `${state.currentPage} / ${totalPages}`;
+    }
+    if (prevBtn) {
+        prevBtn.disabled = state.currentPage <= 1;
+    }
+    if (nextBtn) {
+        nextBtn.disabled = state.currentPage >= totalPages;
+    }
+}
+
+// ===================================
+// Detail Panel
+// ===================================
+
+function initDetailPanel() {
+    const closeBtn = document.getElementById('detailCloseBtn');
+    const overlay = document.getElementById('detailOverlay');
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeDetailPanel);
+    }
+    if (overlay) {
+        overlay.addEventListener('click', closeDetailPanel);
+    }
+
+    // ESC key to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeDetailPanel();
+        }
+    });
+}
+
+function openDetailPanel(programName) {
+    const panel = document.getElementById('detailPanel');
+    const overlay = document.getElementById('detailOverlay');
+    const titleEl = document.getElementById('detailProgramName');
+    const contentEl = document.getElementById('detailPanelContent');
+
+    if (!panel || !overlay) return;
+
+    const program = state.programs.find(p => p.name === programName);
+    if (!program) return;
+
+    // Set title
+    if (titleEl) {
+        titleEl.textContent = `📄 ${programName}`;
+    }
+
+    // Render content
+    if (contentEl) {
+        contentEl.innerHTML = renderDetailContent(program);
+    }
+
+    // Open panel
+    panel.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDetailPanel() {
+    const panel = document.getElementById('detailPanel');
+    const overlay = document.getElementById('detailOverlay');
+
+    if (panel) panel.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function renderDetailContent(program) {
+    const score = program.scores?.final || 0;
+    const phase = getPhase(score);
+    const phaseLabel = phase === 1 ? 'Phase 1 (즉시 전환)' : phase === 2 ? 'Phase 2 (3개월)' : 'Phase 3 (6개월)';
+
+    let html = `
+        <div class="detail-section">
+            <h3 class="detail-section-title">기본 정보</h3>
+            <div class="detail-info-grid">
+                <div class="detail-info-item">
+                    <div class="detail-info-label">라인 수</div>
+                    <div class="detail-info-value">${(program.line_count || 0).toLocaleString()}</div>
+                </div>
+                <div class="detail-info-item">
+                    <div class="detail-info-label">복잡도</div>
+                    <div class="detail-info-value">${program.complexity || 0}</div>
+                </div>
+                <div class="detail-info-item">
+                    <div class="detail-info-label">우선순위 점수</div>
+                    <div class="detail-info-value">${score ? score.toFixed(1) : '-'}</div>
+                </div>
+                <div class="detail-info-item">
+                    <div class="detail-info-label">전환 단계</div>
+                    <div class="detail-info-value" style="font-size:0.9rem;">${phaseLabel}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3 class="detail-section-title">기술 스택</h3>
+            <div class="checkbox-group" style="gap:1rem;">
+                <span class="badge ${program.has_db2 ? 'badge-auto' : ''}" style="opacity:${program.has_db2 ? 1 : 0.4}">DB2</span>
+                <span class="badge ${program.has_cics ? 'badge-hybrid' : ''}" style="opacity:${program.has_cics ? 1 : 0.4}">CICS</span>
+                <span class="badge ${program.has_vsam ? 'badge-rewrite' : ''}" style="opacity:${program.has_vsam ? 1 : 0.4}">VSAM</span>
+            </div>
+        </div>
+    `;
+
+    // CALL dependencies
+    if (program.calls?.length > 0) {
+        html += `
+            <div class="detail-section">
+                <h3 class="detail-section-title">호출 프로그램 (CALL)</h3>
+                <ul class="detail-list">
+                    ${program.calls.map(c => `<li>${c}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    // COPY dependencies
+    if (program.copies?.length > 0) {
+        html += `
+            <div class="detail-section">
+                <h3 class="detail-section-title">COPYBOOK (COPY)</h3>
+                <ul class="detail-list">
+                    ${program.copies.map(c => `<li>${c}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    // DB2 Tables
+    if (program.db2_tables?.length > 0) {
+        html += `
+            <div class="detail-section">
+                <h3 class="detail-section-title">DB2 테이블</h3>
+                <ul class="detail-list">
+                    ${program.db2_tables.map(t => `<li>${t}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    // Recommendation
+    if (program.recommendation) {
+        html += `
+            <div class="detail-section">
+                <h3 class="detail-section-title">전환 권장 사항</h3>
+                <div class="detail-info-item" style="margin-bottom:0.75rem;">
+                    <div class="detail-info-label">전환 방식</div>
+                    <div class="detail-info-value">${program.recommendation.method || '-'}</div>
+                </div>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin:0;">${program.recommendation.reason || ''}</p>
+            </div>
+        `;
+    }
+
+    // Link to docs
+    html += `
+        <div class="detail-section">
+            <h3 class="detail-section-title">분석 문서</h3>
+            <button class="detail-btn" onclick="window.open('output/docs/${program.name}.md', '_blank')">
+                📄 ${program.name}.md 열기
+            </button>
+        </div>
+    `;
+
+    return html;
 }
 
 document.addEventListener('DOMContentLoaded', init);

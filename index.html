@@ -189,9 +189,10 @@
             <section class="table-section">
                 <div class="card table-card">
                     <div class="table-header">
-                        <h2 class="card-title">프로그램 상세</h2>
+                        <h2 class="card-title">📋 프로그램 상세</h2>
                         <div class="table-controls">
                             <input type="text" id="searchInput" placeholder="프로그램 검색..." class="search-input">
+                            <button class="filter-toggle-btn" id="filterToggleBtn">🔍 고급 필터</button>
                             <select id="sortSelect" class="sort-select">
                                 <option value="name">이름순</option>
                                 <option value="complexity">복잡도순</option>
@@ -200,6 +201,61 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Advanced Filter Panel -->
+                    <div class="filter-panel" id="filterPanel" style="display:none;">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label>복잡도 범위</label>
+                                <div class="range-inputs">
+                                    <input type="number" id="complexityMin" value="0" min="0" class="range-input">
+                                    <span>~</span>
+                                    <input type="number" id="complexityMax" value="100" min="0" class="range-input">
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <label>라인수 범위</label>
+                                <div class="range-inputs">
+                                    <input type="number" id="linesMin" value="0" min="0" class="range-input">
+                                    <span>~</span>
+                                    <input type="number" id="linesMax" value="10000" min="0" class="range-input">
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <label>기술 스택</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="filterDB2" checked> DB2
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="filterCICS" checked> CICS
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="filterVSAM" checked> VSAM
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <label>Phase</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="filterPhase1" checked> Phase 1
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="filterPhase2" checked> Phase 2
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="filterPhase3" checked> Phase 3
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-actions">
+                            <button class="filter-apply-btn" id="applyFilterBtn">필터 적용</button>
+                            <button class="filter-reset-btn" id="resetFilterBtn">초기화</button>
+                        </div>
+                    </div>
+
                     <div class="table-wrapper">
                         <table class="data-table">
                             <thead>
@@ -213,44 +269,47 @@
                                     <th>CICS</th>
                                     <th>우선순위</th>
                                     <th>전환방식</th>
+                                    <th>상세</th>
                                 </tr>
                             </thead>
                             <tbody id="programTableBody">
-                                <!-- Skeleton rows -->
-                                <tr>
-                                    <td colspan="9">
-                                        <div class="skeleton-table-row">
-                                            <div class="skeleton skeleton-cell"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                        </div>
-                                        <div class="skeleton-table-row">
-                                            <div class="skeleton skeleton-cell"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                        </div>
-                                        <div class="skeleton-table-row">
-                                            <div class="skeleton skeleton-cell"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                            <div class="skeleton skeleton-cell-sm"></div>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <!-- Table rows loaded by JS -->
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination" id="pagination">
+                        <div class="pagination-info">
+                            <span id="paginationInfo">0개 중 0-0</span>
+                        </div>
+                        <div class="pagination-controls">
+                            <select id="pageSizeSelect" class="page-size-select">
+                                <option value="10">10개씩</option>
+                                <option value="25">25개씩</option>
+                                <option value="50" selected>50개씩</option>
+                                <option value="100">100개씩</option>
+                            </select>
+                            <button class="page-btn" id="prevPageBtn" disabled>◀ 이전</button>
+                            <span class="page-number" id="pageNumber">1 / 1</span>
+                            <button class="page-btn" id="nextPageBtn" disabled>다음 ▶</button>
+                        </div>
                     </div>
                 </div>
             </section>
         </div>
+
+        <!-- Program Detail Panel (Slide-in) -->
+        <div class="detail-panel" id="detailPanel">
+            <div class="detail-panel-header">
+                <h2 id="detailProgramName">프로그램 상세</h2>
+                <button class="detail-close-btn" id="detailCloseBtn">✕</button>
+            </div>
+            <div class="detail-panel-content" id="detailPanelContent">
+                <!-- Content loaded by JS -->
+            </div>
+        </div>
+        <div class="detail-overlay" id="detailOverlay"></div>
 
         <!-- ========== Tab 3: Data Dictionary ========== -->
         <div class="tab-panel" id="tab-datadict">
