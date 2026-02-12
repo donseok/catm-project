@@ -50,6 +50,9 @@
         <button class="tab-btn" data-tab="dependencies">
             <span class="tab-icon">&#128279;</span>의존성 그래프
         </button>
+        <button class="tab-btn" data-tab="crossref">
+            <span class="tab-icon">&#128269;</span>교차 참조
+        </button>
     </nav>
 
     <!-- Main Content -->
@@ -487,6 +490,42 @@
                         </div>
                     </div>
                 </div>
+            </section>
+        </div>
+
+        <!-- ========== Tab 6: Cross Reference ========== -->
+        <div class="tab-panel" id="tab-crossref">
+            <section class="card-grid-2col">
+                <!-- 교차 참조 요약 -->
+                <div class="card">
+                    <h2 class="card-title">교차 참조 요약</h2>
+                    <div id="crossRefSummary">
+                        <p class="text-muted">데이터 로딩 중...</p>
+                    </div>
+                </div>
+                <!-- 영향도 상위 -->
+                <div class="card">
+                    <h2 class="card-title">영향도 TOP 10</h2>
+                    <div id="impactScoresList">
+                        <p class="text-muted">데이터 로딩 중...</p>
+                    </div>
+                </div>
+            </section>
+            <!-- 데드 코드 -->
+            <section class="card" style="margin-top:1rem;">
+                <h2 class="card-title">데드 코드 탐지</h2>
+                <div id="deadCodeReport">
+                    <p class="text-muted">데이터 로딩 중...</p>
+                </div>
+            </section>
+            <!-- 상세 조회 -->
+            <section class="card" style="margin-top:1rem;">
+                <h2 class="card-title">리소스별 영향 조회</h2>
+                <div style="margin-bottom:0.75rem;">
+                    <input type="text" id="crossRefSearch" placeholder="COPYBOOK/테이블/프로그램명 입력..." class="filter-input" style="width:300px;">
+                    <button class="graph-btn" onclick="searchCrossRef()">조회</button>
+                </div>
+                <div id="crossRefDetail"></div>
             </section>
         </div>
 

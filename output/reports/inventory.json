@@ -19,11 +19,41 @@
           "file": "src\\cobol\\PGM003.cbl",
           "lines": 178,
           "size_kb": 12.6
+        },
+        {
+          "name": "PGM004",
+          "file": "src\\cobol\\PGM004.cbl",
+          "lines": 204,
+          "size_kb": 14.4
+        },
+        {
+          "name": "PGM005",
+          "file": "src\\cobol\\PGM005.cbl",
+          "lines": 234,
+          "size_kb": 16.5
+        },
+        {
+          "name": "PGM006",
+          "file": "src\\cobol\\PGM006.cbl",
+          "lines": 217,
+          "size_kb": 15.3
         }
       ]
     },
     "COPYBOOK": {
       "files": [
+        {
+          "name": "CPYBFOP",
+          "file": "src\\copybook\\CPYBFOP.cpy",
+          "lines": 27,
+          "size_kb": 2.0
+        },
+        {
+          "name": "CPYBFTM",
+          "file": "src\\copybook\\CPYBFTM.cpy",
+          "lines": 26,
+          "size_kb": 1.9
+        },
         {
           "name": "CPYINVMS",
           "file": "src\\copybook\\CPYINVMS.cpy",
@@ -43,6 +73,18 @@
           "size_kb": 0.8
         },
         {
+          "name": "CPYPACT",
+          "file": "src\\copybook\\CPYPACT.cpy",
+          "lines": 16,
+          "size_kb": 1.2
+        },
+        {
+          "name": "CPYPPLAN",
+          "file": "src\\copybook\\CPYPPLAN.cpy",
+          "lines": 24,
+          "size_kb": 1.8
+        },
+        {
           "name": "CPYQCHS",
           "file": "src\\copybook\\CPYQCHS.cpy",
           "lines": 13,
@@ -53,6 +95,18 @@
           "file": "src\\copybook\\CPYQCRS.cpy",
           "lines": 30,
           "size_kb": 1.4
+        },
+        {
+          "name": "CPYRMMS",
+          "file": "src\\copybook\\CPYRMMS.cpy",
+          "lines": 23,
+          "size_kb": 1.7
+        },
+        {
+          "name": "CPYRMRC",
+          "file": "src\\copybook\\CPYRMRC.cpy",
+          "lines": 28,
+          "size_kb": 2.0
         },
         {
           "name": "CPYSMRY",
@@ -81,5 +135,5 @@
       "files": []
     }
   },
-  "scan_date": "2026-02-08T20:22:12.187809"
+  "scan_date": "2026-02-12T20:54:14.080408"
 }

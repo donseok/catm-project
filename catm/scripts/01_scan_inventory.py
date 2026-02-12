@@ -21,6 +21,9 @@ if __name__ == "__main__":
 from pathlib import Path
 from datetime import datetime
 from catm.utils.file_utils import load_config, save_json, save_markdown, find_files
+from catm.utils.logger import get_logger
+
+logger = get_logger("scripts.01_scan_inventory")
 
 
 def scan_directory(dir_path: str, extensions: list[str]) -> list[dict]:
@@ -86,6 +89,8 @@ def generate_inventory_report(inventory: dict) -> str:
     cobol_files = inventory["categories"].get("COBOL 프로그램", {}).get("files", [])
     if cobol_files:
         lines_list = [f["lines"] for f in cobol_files]
+        if not lines_list:
+            lines_list = [0]
         md += f"""
 ## 2. COBOL 프로그램 통계
 
@@ -131,9 +136,9 @@ def generate_inventory_report(inventory: dict) -> str:
 
 
 def main():
-    print("=" * 50)
-    print("  CATM Step 1: 소스코드 인벤토리 스캔")
-    print("=" * 50)
+    logger.info("=" * 50)
+    logger.info("CATM Step 1: 소스코드 인벤토리 스캔")
+    logger.info("=" * 50)
     
     config = load_config()
     source_root = config["paths"]["source_root"]
@@ -170,10 +175,10 @@ def main():
     inventory = {"categories": {}, "scan_date": datetime.now().isoformat()}
     
     for cat_name, cat_info in categories.items():
-        print(f"\n  📂 스캔 중: {cat_name} ({cat_info['dir']})")
+        logger.info("스캔 중: %s (%s)", cat_name, cat_info['dir'])
         files = scan_directory(cat_info["dir"], cat_info["ext"])
         inventory["categories"][cat_name] = {"files": files}
-        print(f"     → {len(files)}개 파일, {sum(f['lines'] for f in files):,} 라인")
+        logger.info("  → %d개 파일, %s 라인", len(files), f"{sum(f['lines'] for f in files):,}")
     
     # JSON 저장
     json_path = os.path.join(output_root, "reports", "inventory.json")
@@ -189,11 +194,10 @@ def main():
     for data in inventory["categories"].values():
         all_files.extend(data["files"])
     
-    print(f"\n{'=' * 50}")
-    print(f"  스캔 완료!")
-    print(f"  총 {len(all_files)}개 파일, {sum(f['lines'] for f in all_files):,} 라인")
-    print(f"  결과: {md_path}")
-    print(f"{'=' * 50}")
+    logger.info("=" * 50)
+    logger.info("스캔 완료! 총 %d개 파일, %s 라인", len(all_files), f"{sum(f['lines'] for f in all_files):,}")
+    logger.info("결과: %s", md_path)
+    logger.info("=" * 50)
 
 
 if __name__ == "__main__":

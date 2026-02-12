@@ -32,4 +32,34 @@ graph LR
     class F_QCRSLT file
     class PGM003 pgm
 
+    PGM004[PGM004] <-->|SQL| DB_TB_PROD_PLAN_RESULT[(TB_PROD_PLAN_RESULT)]
+    class DB_TB_PROD_PLAN_RESULT db
+    PGM004[PGM004] <-->|I/O| F_PLNRSLT[/PLNRSLT/]
+    class F_PLNRSLT file
+    PGM004[PGM004] <-->|I/O| F_PRDACT[/PRDACT/]
+    class F_PRDACT file
+    PGM004[PGM004] <-->|I/O| F_PRDPLAN[/PRDPLAN/]
+    class F_PRDPLAN file
+    class PGM004 pgm
+
+    PGM005[PGM005] <-->|SQL| DB_TB_BF_DAILY_OPER[(TB_BF_DAILY_OPER)]
+    class DB_TB_BF_DAILY_OPER db
+    PGM005[PGM005] <-->|I/O| F_BFDAILY[/BFDAILY/]
+    class F_BFDAILY file
+    PGM005[PGM005] <-->|I/O| F_BFOPER[/BFOPER/]
+    class F_BFOPER file
+    PGM005[PGM005] <-->|I/O| F_BFTEMP[/BFTEMP/]
+    class F_BFTEMP file
+    class PGM005 pgm
+
+    PGM006[PGM006] <-->|SQL| DB_TB_RM_DAILY_RECEIPT[(TB_RM_DAILY_RECEIPT)]
+    class DB_TB_RM_DAILY_RECEIPT db
+    PGM006[PGM006] <-->|I/O| F_RMMAST[/RMMAST/]
+    class F_RMMAST file
+    PGM006[PGM006] <-->|I/O| F_RMRCPT[/RMRCPT/]
+    class F_RMRCPT file
+    PGM006[PGM006] <-->|I/O| F_RMRETN[/RMRETN/]
+    class F_RMRETN file
+    class PGM006 pgm
+
 ```

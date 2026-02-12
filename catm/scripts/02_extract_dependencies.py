@@ -26,6 +26,15 @@ from pathlib import Path
 from datetime import datetime
 from catm.utils.cobol_parser import analyze_program
 from catm.utils.file_utils import load_config, save_json, find_files
+from catm.utils.cross_reference import (
+    build_cross_reference,
+    build_impact_scores,
+    detect_dead_code,
+    serialize_cross_reference,
+)
+from catm.utils.logger import get_logger
+
+logger = get_logger("scripts.02_extract_dependencies")
 
 
 def analyze_jcl(file_path: str) -> dict:
@@ -74,9 +83,9 @@ def build_category_map(config: dict) -> dict[str, str]:
 
 
 def main():
-    print("=" * 50)
-    print("  CATM Step 2: 의존성 추출 (정적 분석)")
-    print("=" * 50)
+    logger.info("=" * 50)
+    logger.info("CATM Step 2: 의존성 추출 (정적 분석)")
+    logger.info("=" * 50)
 
     config = load_config()
     source_root = config["paths"]["source_root"]
@@ -95,9 +104,8 @@ def main():
     cobol_dir = os.path.join(source_root, config["source_dirs"]["cobol"])
     cobol_files = find_files(cobol_dir, config["file_extensions"]["cobol"])
     
-    print(f"\n  📂 COBOL 프로그램 분석: {len(cobol_files)}개")
+    logger.info("COBOL 프로그램 분석: %d개", len(cobol_files))
     for f in cobol_files:
-        print(f"    분석 중: {f.stem.upper()}", end="")
         try:
             pgm = analyze_program(str(f))
             result["programs"].append({
@@ -117,24 +125,24 @@ def main():
                 "has_vsam": pgm.has_vsam,
                 "category": category_map.get(pgm.name, "미분류"),
             })
-            print(f" ✅ (CALL:{len(pgm.calls)}, COPY:{len(pgm.copies)}, "
-                  f"DB2:{len(pgm.db2_tables)}, 복잡도:{pgm.complexity})")
+            logger.info("  %s - CALL:%d, COPY:%d, DB2:%d, 복잡도:%d",
+                        pgm.name, len(pgm.calls), len(pgm.copies),
+                        len(pgm.db2_tables), pgm.complexity)
         except Exception as e:
-            print(f" ❌ 에러: {e}")
+            logger.error("  %s - 에러: %s", f.stem.upper(), e)
     
     # --- JCL 분석 ---
     jcl_dir = os.path.join(source_root, config["source_dirs"]["jcl"])
     jcl_files = find_files(jcl_dir, config["file_extensions"]["jcl"])
     
-    print(f"\n  📂 JCL 분석: {len(jcl_files)}개")
+    logger.info("JCL 분석: %d개", len(jcl_files))
     for f in jcl_files:
-        print(f"    분석 중: {f.stem.upper()}", end="")
         try:
             jcl = analyze_jcl(str(f))
             result["jcl_jobs"].append(jcl)
-            print(f" ✅ ({jcl['step_count']} steps)")
+            logger.info("  %s - %d steps", jcl['job_name'], jcl['step_count'])
         except Exception as e:
-            print(f" ❌ 에러: {e}")
+            logger.error("  %s - 에러: %s", f.stem.upper(), e)
     
     # --- 요약 통계 ---
     programs = result["programs"]
@@ -175,22 +183,34 @@ def main():
         for cat_name, progs in cat_groups.items()
     ]
 
+    # --- 교차 참조 / 영향도 / 데드 코드 ---
+    logger.info("교차 참조 및 영향도 분석 중...")
+    cross_ref = build_cross_reference(programs, result["jcl_jobs"])
+    result["cross_reference"] = serialize_cross_reference(cross_ref)
+    result["impact_scores"] = build_impact_scores(cross_ref, programs)
+
+    dead = detect_dead_code(programs, cross_ref)
+    result["dead_code"] = {
+        "orphan_programs": dead.orphan_programs,
+        "unused_copybooks": dead.unused_copybooks,
+    }
+
     # 저장
     json_path = os.path.join(output_root, "reports", "dependency-scan.json")
     save_json(result, json_path)
     
     # 요약 출력
     s = result["summary"]
-    print(f"\n{'=' * 50}")
-    print(f"  의존성 추출 완료!")
-    print(f"  프로그램: {s['total_programs']}개 ({s['total_lines']:,} 라인)")
-    print(f"  JCL: {s['total_jcl_jobs']}개")
-    print(f"  COPYBOOK: {s['unique_copybooks']}개 (고유)")
-    print(f"  DB2 테이블: {s['unique_db2_tables']}개 (고유)")
-    print(f"  평균 복잡도: {s['avg_complexity']}")
-    print(f"  CICS 사용: {s['cics_programs']}개 / DB2 사용: {s['db2_programs']}개")
-    print(f"  결과: {json_path}")
-    print(f"{'=' * 50}")
+    logger.info("=" * 50)
+    logger.info("의존성 추출 완료!")
+    logger.info("프로그램: %d개 (%s 라인)", s['total_programs'], f"{s['total_lines']:,}")
+    logger.info("JCL: %d개", s['total_jcl_jobs'])
+    logger.info("COPYBOOK: %d개 (고유)", s['unique_copybooks'])
+    logger.info("DB2 테이블: %d개 (고유)", s['unique_db2_tables'])
+    logger.info("평균 복잡도: %s", s['avg_complexity'])
+    logger.info("CICS 사용: %d개 / DB2 사용: %d개", s['cics_programs'], s['db2_programs'])
+    logger.info("결과: %s", json_path)
+    logger.info("=" * 50)
 
 
 if __name__ == "__main__":

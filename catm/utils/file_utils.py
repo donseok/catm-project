@@ -8,6 +8,11 @@ import yaml
 from pathlib import Path
 from typing import Optional
 
+from catm.utils.logger import setup_logging, get_logger
+from catm.utils.config_validator import validate_config
+
+logger = get_logger("file_utils")
+
 
 def load_config(config_path: str = "") -> dict:
     """CATM 설정 파일 로드 (기본: 프로젝트 루트 기준 catm/config/catm_config.yaml)"""
@@ -16,7 +21,22 @@ def load_config(config_path: str = "") -> dict:
         project_root = Path(__file__).resolve().parent.parent.parent
         config_path = str(project_root / "catm" / "config" / "catm_config.yaml")
     with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        config = yaml.safe_load(f)
+
+    # 로깅 초기화 (설정 파일의 logging 섹션 활용)
+    log_cfg = config.get("logging", {})
+    setup_logging(
+        level=log_cfg.get("level", "INFO"),
+        log_file=log_cfg.get("file"),
+        console=log_cfg.get("console", True),
+    )
+
+    # 설정 검증
+    errors = validate_config(config)
+    if errors:
+        logger.warning("설정 검증 경고 %d건", len(errors))
+
+    return config
 
 
 def ensure_dir(dir_path: str) -> Path:
@@ -31,7 +51,7 @@ def save_json(data: dict, file_path: str) -> None:
     ensure_dir(os.path.dirname(file_path))
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-    print(f"  💾 저장: {file_path}")
+    logger.info("저장: %s", file_path)
 
 
 def load_json(file_path: str) -> dict:
@@ -45,7 +65,7 @@ def save_markdown(content: str, file_path: str) -> None:
     ensure_dir(os.path.dirname(file_path))
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(content)
-    print(f"  📝 저장: {file_path}")
+    logger.info("저장: %s", file_path)
 
 
 def find_files(directory: str, extensions: list[str]) -> list[Path]:

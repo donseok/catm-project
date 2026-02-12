@@ -26,6 +26,9 @@ from catm.utils.file_utils import (
     load_config, load_json, save_markdown, save_json, ensure_dir
 )
 from catm.utils.claude_client import call_claude
+from catm.utils.logger import get_logger
+
+logger = get_logger("scripts.06_prioritize")
 
 
 def calculate_static_scores(programs: list[dict], config: dict) -> list[dict]:
@@ -156,19 +159,30 @@ def call_claude_for_priority(scored_data: list[dict], config: dict) -> str:
 def parse_claude_scores(claude_response: str) -> dict:
     """Claude 응답에서 비즈니스 중요도 JSON을 파싱
 
+    다중 JSON 블록이 있을 경우 순차적으로 시도합니다.
+
     Returns:
         {"PGM001": {"business_importance": 8, "phase": 1, "reason": "..."}, ...}
     """
-    # ```json ... ``` 블록 추출
-    json_match = re.search(r"```json\s*\n(.*?)```", claude_response, re.DOTALL)
-    if not json_match:
+    # ```json ... ``` 블록 모두 추출
+    json_blocks = re.findall(r"```json\s*\n(.*?)```", claude_response, re.DOTALL)
+    if not json_blocks:
+        logger.warning("Claude 응답에서 JSON 블록을 찾을 수 없음")
         return {}
 
-    try:
-        data = json.loads(json_match.group(1).strip())
-        return data.get("scores", {})
-    except (json.JSONDecodeError, AttributeError):
-        return {}
+    for i, block in enumerate(json_blocks):
+        try:
+            data = json.loads(block.strip())
+            scores = data.get("scores", {})
+            if scores:
+                logger.info("JSON 블록 %d/%d에서 scores 파싱 성공", i + 1, len(json_blocks))
+                return scores
+        except json.JSONDecodeError as e:
+            logger.warning("JSON 블록 %d/%d 파싱 실패: %s", i + 1, len(json_blocks), e)
+            continue
+
+    logger.warning("모든 JSON 블록에서 scores 키를 찾지 못함")
+    return {}
 
 
 def apply_claude_scores(scored: list[dict], claude_scores: dict, config: dict) -> list[dict]:
@@ -279,33 +293,31 @@ def generate_priority_report(scored: list[dict]) -> str:
 
 
 def main():
-    print("=" * 60)
-    print("  CATM Step 6: 모더나이제이션 우선순위 산정")
-    print("  ⚡ Claude Code Max 20x 구독 사용")
-    print("=" * 60)
-    
+    logger.info("=" * 60)
+    logger.info("CATM Step 6: 모더나이제이션 우선순위 산정")
+    logger.info("Claude Code Max 20x 구독 사용")
+    logger.info("=" * 60)
+
     config = load_config()
     output_root = config["paths"]["output_root"]
-    
-    # 의존성 데이터 로드
+
     scan_path = os.path.join(output_root, "reports", "dependency-scan.json")
     if not os.path.exists(scan_path):
-        print(f"\n  ❌ {scan_path}이 없습니다. 먼저 02를 실행하세요.")
+        logger.error("%s이 없습니다. 먼저 02를 실행하세요.", scan_path)
         return
-    
+
     scan_data = load_json(scan_path)
     programs = scan_data.get("programs", [])
-    
+
     if not programs:
-        print("\n  ❌ 분석된 프로그램이 없습니다.")
+        logger.error("분석된 프로그램이 없습니다.")
         return
-    
-    # 1. 정적 분석 기반 자동 점수 산정
-    print(f"\n  📊 정적 분석 기반 점수 산정: {len(programs)}개 프로그램")
+
+    logger.info("정적 분석 기반 점수 산정: %d개 프로그램", len(programs))
     scored = calculate_static_scores(programs, config)
     
     # 2. Claude Code에게 비즈니스 중요도 판단 요청
-    print("\n  🤖 Claude Code에게 비즈니스 중요도 평가 요청 중...")
+    logger.info("Claude Code에게 비즈니스 중요도 평가 요청 중...")
     claude_response = call_claude_for_priority(scored, config)
     
     # Claude 응답 저장
@@ -315,13 +327,13 @@ def main():
     # 2-1. Claude 응답에서 비즈니스 중요도 파싱 및 반영
     claude_scores = parse_claude_scores(claude_response)
     if claude_scores:
-        print(f"  ✅ Claude 비즈니스 중요도 파싱 성공: {len(claude_scores)}개 프로그램")
+        logger.info("Claude 비즈니스 중요도 파싱 성공: %d개 프로그램", len(claude_scores))
         scored = apply_claude_scores(scored, claude_scores, config)
     else:
-        print("  ⚠️ Claude 응답에서 JSON 점수를 파싱하지 못했습니다. 기본값(5) 사용")
+        logger.warning("Claude 응답에서 JSON 점수를 파싱하지 못했습니다. 기본값(5) 사용")
 
     # 3. 보고서 생성
-    print("\n  📋 우선순위 매트릭스 보고서 생성 중...")
+    logger.info("우선순위 매트릭스 보고서 생성 중...")
     report = generate_priority_report(scored)
     report_path = os.path.join(output_root, "reports", "priority_matrix.md")
     save_markdown(report, report_path)
@@ -330,12 +342,12 @@ def main():
     json_path = os.path.join(output_root, "reports", "priority_data.json")
     save_json({"scored_programs": scored}, json_path)
     
-    print(f"\n{'=' * 60}")
-    print(f"  우선순위 산정 완료!")
-    print(f"  매트릭스: {report_path}")
-    print(f"  Claude 분석: {claude_md_path}")
-    print(f"  데이터: {json_path}")
-    print(f"{'=' * 60}")
+    logger.info("=" * 60)
+    logger.info("우선순위 산정 완료!")
+    logger.info("매트릭스: %s", report_path)
+    logger.info("Claude 분석: %s", claude_md_path)
+    logger.info("데이터: %s", json_path)
+    logger.info("=" * 60)
 
 
 if __name__ == "__main__":

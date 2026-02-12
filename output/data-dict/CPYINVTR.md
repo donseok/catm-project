@@ -16,8 +16,8 @@
 | 88 | 　　　　　　　　　　　　　　　　　IT-IN | `` | GROUP |  |  | I |
 | 88 | 　　　　　　　　　　　　　　　　　IT-OUT | `` | GROUP |  |  | O |
 | 88 | 　　　　　　　　　　　　　　　　　IT-ADJ | `` | GROUP |  |  | A |
-| 10 | 　IT-QTY | `S9(9)` | 숫자(9) |  |  |  |
-| 10 | 　IT-UNIT-PRICE | `S9(9)V99` | 부호숫자(9.2) |  |  |  |
+| 10 | 　IT-QTY | `S9(9)` | 숫자(9) 패킹십진수 |  |  |  |
+| 10 | 　IT-UNIT-PRICE | `S9(9)V99` | 부호숫자(9.2) 패킹십진수 |  |  |  |
 | 10 | 　IT-WAREHOUSE-CD | `X(05)` | 문자열(5) |  |  |  |
 | 10 | 　IT-LOCATION-CD | `X(10)` | 문자열(10) |  |  |  |
 | 10 | 　IT-VENDOR-CD | `X(10)` | 문자열(10) |  |  |  |

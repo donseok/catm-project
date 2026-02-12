@@ -42,8 +42,12 @@ let state = {
     erdRendered: false,
     dataDictLoaded: false,
     modernizationRendered: false,
+    crossRefRendered: false,
     graphView: 'call', // 'call' or 'dataflow'
     dataLoaded: false,
+    crossReference: null,
+    impactScores: null,
+    deadCode: null,
     expandedProgram: null, // 현재 펼쳐진 프로그램명
     programDocsCache: {}, // 프로그램 문서 캐시
     // Pagination state
@@ -82,6 +86,9 @@ async function loadData() {
         state.summary = depData.summary || {};
         state.categoriesSummary = depData.categories_summary || [];
         state.scanDate = depData.scan_date;
+        state.crossReference = depData.cross_reference || null;
+        state.impactScores = depData.impact_scores || null;
+        state.deadCode = depData.dead_code || null;
 
         const priorityData = await priorityResponse.json();
         state.priorityData = priorityData.scored_programs || [];
@@ -229,6 +236,9 @@ function switchTab(tabId) {
             }
             if (tabId === 'modernization' && !state.modernizationRendered && state.dataLoaded) {
                 renderModernizationTab();
+            }
+            if (tabId === 'crossref' && !state.crossRefRendered && state.dataLoaded) {
+                renderCrossRefTab();
             }
         }, 200);
     }
@@ -1675,13 +1685,17 @@ function renderPaginatedTable() {
         return;
     }
 
+    const orphans = new Set((state.deadCode?.orphan_programs) || []);
+
     tbody.innerHTML = pageData.map(prog => {
         const method = prog.recommendation?.method || '';
         const badgeClass = getMethodBadgeClass(method);
+        const isOrphan = orphans.has(prog.name);
+        const orphanBadge = isOrphan ? ' <span class="dead-code-badge orphan" style="font-size:0.7rem;padding:0.1rem 0.4rem;">고아</span>' : '';
 
         return `
         <tr>
-            <td><strong>${prog.name}</strong></td>
+            <td><strong>${prog.name}</strong>${orphanBadge}</td>
             <td>${getCategoryBadgeHtml(prog.category)}</td>
             <td>${(prog.line_count || 0).toLocaleString()}</td>
             <td>${prog.complexity || 0}</td>
@@ -2305,6 +2319,221 @@ function getCopybookCount() {
 
 function getRewriteCount() {
     return state.programs.filter(p => p.recommendation?.method === '재작성').length;
+}
+
+// ===================================
+// Cross-Reference Tab
+// ===================================
+
+function renderCrossRefTab() {
+    state.crossRefRendered = true;
+    renderCrossRefSummary();
+    renderImpactScores();
+    renderDeadCodeReport();
+}
+
+function renderCrossRefSummary() {
+    const container = document.getElementById('crossRefSummary');
+    if (!container) return;
+
+    const cr = state.crossReference;
+    if (!cr) {
+        container.innerHTML = '<p class="text-muted">교차 참조 데이터가 없습니다. CATM Phase 2를 실행하세요.</p>';
+        return;
+    }
+
+    const counts = [
+        { label: 'COPYBOOK 참조', count: Object.keys(cr.copybook_usage || {}).length, icon: '&#128214;' },
+        { label: 'DB2 테이블 참조', count: Object.keys(cr.db2_table_usage || {}).length, icon: '&#128451;' },
+        { label: 'CALL 관계', count: Object.keys(cr.called_by || {}).length, icon: '&#128222;' },
+        { label: 'VSAM 파일', count: Object.keys(cr.vsam_usage || {}).length, icon: '&#128193;' },
+        { label: 'JCL 실행', count: Object.keys(cr.program_executed_by_jcl || {}).length, icon: '&#9881;' },
+    ];
+
+    container.innerHTML = `
+        <div class="crossref-stats">
+            ${counts.map(c => `
+                <div class="crossref-stat-item">
+                    <span class="crossref-stat-icon">${c.icon}</span>
+                    <span class="crossref-stat-count">${c.count}</span>
+                    <span class="crossref-stat-label">${c.label}</span>
+                </div>
+            `).join('')}
+        </div>
+        <style>
+            .crossref-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:0.75rem; }
+            .crossref-stat-item { text-align:center; padding:0.75rem; border-radius:8px; background:var(--bg-secondary); }
+            .crossref-stat-icon { display:block; font-size:1.5rem; margin-bottom:0.25rem; }
+            .crossref-stat-count { display:block; font-size:1.5rem; font-weight:700; color:var(--accent); }
+            .crossref-stat-label { display:block; font-size:0.75rem; color:var(--text-muted); }
+        </style>
+    `;
+}
+
+function renderImpactScores() {
+    const container = document.getElementById('impactScoresList');
+    if (!container) return;
+
+    const scores = state.impactScores;
+    if (!scores || Object.keys(scores).length === 0) {
+        container.innerHTML = '<p class="text-muted">영향도 데이터가 없습니다.</p>';
+        return;
+    }
+
+    // 영향도 점수 내림차순 정렬, 상위 10개
+    const sorted = Object.entries(scores)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+    container.innerHTML = `
+        <table class="impact-table">
+            <thead><tr><th>리소스</th><th>영향도</th><th>시각화</th></tr></thead>
+            <tbody>
+                ${sorted.map(([name, score]) => `
+                    <tr>
+                        <td><strong>${name}</strong></td>
+                        <td>${(score * 100).toFixed(0)}%</td>
+                        <td>
+                            <div class="impact-bar-bg">
+                                <div class="impact-bar" style="width:${score * 100}%;background:${score >= 0.7 ? '#ef4444' : score >= 0.4 ? '#f59e0b' : '#22c55e'}"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+        <style>
+            .impact-table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+            .impact-table th, .impact-table td { padding:0.5rem 0.75rem; text-align:left; border-bottom:1px solid var(--border); }
+            .impact-table th { font-weight:600; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; }
+            .impact-bar-bg { width:100%; height:8px; background:var(--bg-secondary); border-radius:4px; overflow:hidden; }
+            .impact-bar { height:100%; border-radius:4px; transition:width 0.5s ease; }
+        </style>
+    `;
+}
+
+function renderDeadCodeReport() {
+    const container = document.getElementById('deadCodeReport');
+    if (!container) return;
+
+    const dc = state.deadCode;
+    if (!dc) {
+        container.innerHTML = '<p class="text-muted">데드 코드 데이터가 없습니다.</p>';
+        return;
+    }
+
+    const orphans = dc.orphan_programs || [];
+    const unusedCpy = dc.unused_copybooks || [];
+
+    if (orphans.length === 0 && unusedCpy.length === 0) {
+        container.innerHTML = '<p style="color:var(--accent);font-weight:600;">&#10003; 데드 코드가 발견되지 않았습니다.</p>';
+        return;
+    }
+
+    let html = '<div class="dead-code-grid">';
+
+    if (orphans.length > 0) {
+        html += `
+            <div class="dead-code-section">
+                <h3 class="dead-code-title">&#9888; 고아 프로그램 (${orphans.length}개)</h3>
+                <p class="dead-code-desc">JCL/CALL에서 참조되지 않는 프로그램</p>
+                <div class="dead-code-items">
+                    ${orphans.map(p => `<span class="dead-code-badge orphan">${p}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    if (unusedCpy.length > 0) {
+        html += `
+            <div class="dead-code-section">
+                <h3 class="dead-code-title">&#9888; 미사용 COPYBOOK (${unusedCpy.length}개)</h3>
+                <p class="dead-code-desc">어떤 프로그램에서도 COPY하지 않는 COPYBOOK</p>
+                <div class="dead-code-items">
+                    ${unusedCpy.map(c => `<span class="dead-code-badge unused">${c}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    html += `
+        <style>
+            .dead-code-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1rem; }
+            .dead-code-section { padding:1rem; border-radius:8px; background:var(--bg-secondary); }
+            .dead-code-title { font-size:1rem; font-weight:600; margin-bottom:0.25rem; }
+            .dead-code-desc { font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem; }
+            .dead-code-items { display:flex; flex-wrap:wrap; gap:0.375rem; }
+            .dead-code-badge { padding:0.25rem 0.625rem; border-radius:12px; font-size:0.8rem; font-weight:500; }
+            .dead-code-badge.orphan { background:rgba(239,68,68,0.12); color:#ef4444; }
+            .dead-code-badge.unused { background:rgba(245,158,11,0.12); color:#f59e0b; }
+        </style>
+    `;
+
+    container.innerHTML = html;
+}
+
+function searchCrossRef() {
+    const input = document.getElementById('crossRefSearch');
+    const container = document.getElementById('crossRefDetail');
+    if (!input || !container) return;
+
+    const query = input.value.trim().toUpperCase();
+    if (!query) {
+        container.innerHTML = '<p class="text-muted">검색어를 입력하세요.</p>';
+        return;
+    }
+
+    const cr = state.crossReference;
+    if (!cr) {
+        container.innerHTML = '<p class="text-muted">교차 참조 데이터가 없습니다.</p>';
+        return;
+    }
+
+    let results = [];
+
+    // 각 역방향 맵에서 검색
+    const maps = [
+        { data: cr.copybook_usage, label: 'COPYBOOK 사용 프로그램' },
+        { data: cr.db2_table_usage, label: 'DB2 테이블 사용 프로그램' },
+        { data: cr.called_by, label: 'CALL 호출 프로그램' },
+        { data: cr.vsam_usage, label: 'VSAM 사용 프로그램' },
+        { data: cr.program_executed_by_jcl, label: 'JCL 실행 Job' },
+    ];
+
+    for (const map of maps) {
+        if (map.data && map.data[query]) {
+            results.push({
+                label: map.label,
+                items: map.data[query],
+            });
+        }
+    }
+
+    // 영향도 점수
+    const impactScore = state.impactScores?.[query];
+
+    if (results.length === 0 && impactScore === undefined) {
+        container.innerHTML = `<p class="text-muted">"${query}"에 대한 교차 참조를 찾을 수 없습니다.</p>`;
+        return;
+    }
+
+    let html = `<h3 style="margin-bottom:0.5rem;">"${query}" 영향 분석</h3>`;
+
+    if (impactScore !== undefined) {
+        html += `<p style="margin-bottom:0.75rem;">영향도: <strong>${(impactScore * 100).toFixed(0)}%</strong></p>`;
+    }
+
+    for (const r of results) {
+        html += `
+            <div style="margin-bottom:0.75rem;">
+                <strong>${r.label} (${r.items.length}개)</strong><br>
+                ${r.items.map(i => `<span class="dead-code-badge" style="background:var(--bg-secondary);color:var(--text-primary);">${i}</span>`).join(' ')}
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
 }
 
 document.addEventListener('DOMContentLoaded', init);

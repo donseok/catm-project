@@ -23,6 +23,9 @@ from catm.utils.file_utils import (
     load_config, find_files, save_markdown
 )
 from catm.utils.mermaid_builder import build_erd
+from catm.utils.logger import get_logger
+
+logger = get_logger("scripts.03_parse_copybook")
 
 
 def fields_to_markdown(copybook_name: str, fields: list) -> str:
@@ -70,49 +73,45 @@ def fields_to_markdown(copybook_name: str, fields: list) -> str:
 
 
 def main():
-    print("=" * 50)
-    print("  CATM Step 3: COPYBOOK 파싱 → 데이터 사전")
-    print("=" * 50)
-    
+    logger.info("=" * 50)
+    logger.info("CATM Step 3: COPYBOOK 파싱 → 데이터 사전")
+    logger.info("=" * 50)
+
     config = load_config()
     source_root = config["paths"]["source_root"]
     output_root = config["paths"]["output_root"]
-    
+
     cpy_dir = os.path.join(source_root, config["source_dirs"]["copybook"])
     cpy_files = find_files(cpy_dir, config["file_extensions"]["copybook"])
-    
-    print(f"\n  📂 COPYBOOK 파싱: {len(cpy_files)}개")
+
+    logger.info("COPYBOOK 파싱: %d개", len(cpy_files))
     
     all_copybook_fields = {}  # ERD 생성용
     
     for f in cpy_files:
         name = f.stem.upper()
-        print(f"    파싱 중: {name}", end="")
-        
         try:
             source = read_source_file(str(f))
             fields = parse_copybook_fields(source)
-            
+
             if fields:
-                # 마크다운 데이터 사전 저장
                 md = fields_to_markdown(name, fields)
                 md_path = os.path.join(
                     output_root, "data-dict", f"{name}.md"
                 )
                 save_markdown(md, md_path)
-                
-                # ERD용 데이터 수집
+
                 all_copybook_fields[name] = [
-                    {"name": f.name, "picture": f.picture, "data_type": f.data_type}
-                    for f in fields if f.picture  # 기본 항목만
+                    {"name": fld.name, "picture": fld.picture, "data_type": fld.data_type}
+                    for fld in fields if fld.picture
                 ]
-                
-                print(f" ✅ ({len(fields)} 필드)")
+
+                logger.info("  %s - %d 필드", name, len(fields))
             else:
-                print(f" ⚠️ 필드 없음")
-        
+                logger.warning("  %s - 필드 없음", name)
+
         except Exception as e:
-            print(f" ❌ 에러: {e}")
+            logger.error("  %s - 에러: %s", name, e)
     
     # ERD 다이어그램 생성
     if all_copybook_fields:
@@ -120,11 +119,10 @@ def main():
         erd_path = os.path.join(output_root, "diagrams", "erd_copybooks.md")
         save_markdown(erd, erd_path)
     
-    print(f"\n{'=' * 50}")
-    print(f"  COPYBOOK 파싱 완료!")
-    print(f"  데이터 사전: {len(all_copybook_fields)}개 생성")
-    print(f"  결과: {output_root}/data-dict/")
-    print(f"{'=' * 50}")
+    logger.info("=" * 50)
+    logger.info("COPYBOOK 파싱 완료! 데이터 사전: %d개 생성", len(all_copybook_fields))
+    logger.info("결과: %s/data-dict/", output_root)
+    logger.info("=" * 50)
 
 
 if __name__ == "__main__":

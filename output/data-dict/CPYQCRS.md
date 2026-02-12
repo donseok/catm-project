@@ -23,9 +23,9 @@
 | 88 | 　　　　　　　　　　　　　　　　　QR-MAJOR | `` | GROUP |  |  | B |
 | 88 | 　　　　　　　　　　　　　　　　　QR-MINOR | `` | GROUP |  |  | C |
 | 10 | 　QR-DEFECT-CD | `X(05)` | 문자열(5) |  |  |  |
-| 10 | 　QR-MEASURE-VAL | `S9(7)V99` | 부호숫자(7.2) |  |  |  |
-| 10 | 　QR-UPPER-LIMIT | `S9(7)V99` | 부호숫자(7.2) |  |  |  |
-| 10 | 　QR-LOWER-LIMIT | `S9(7)V99` | 부호숫자(7.2) |  |  |  |
+| 10 | 　QR-MEASURE-VAL | `S9(7)V99` | 부호숫자(7.2) 패킹십진수 |  |  |  |
+| 10 | 　QR-UPPER-LIMIT | `S9(7)V99` | 부호숫자(7.2) 패킹십진수 |  |  |  |
+| 10 | 　QR-LOWER-LIMIT | `S9(7)V99` | 부호숫자(7.2) 패킹십진수 |  |  |  |
 | 10 | 　QR-REWORK-CNT | `9(02)` | 숫자(2) |  |  |  |
 | 10 | 　QR-INSPECTOR-ID | `X(10)` | 문자열(10) |  |  |  |
 | 10 | 　QR-REG-TIME | `9(06)` | 숫자(6) |  |  |  |

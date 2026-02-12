@@ -9,6 +9,10 @@ import subprocess
 import time
 from typing import Optional
 
+from catm.utils.logger import get_logger
+
+logger = get_logger("claude_client")
+
 
 def is_error_response(response: str) -> bool:
     """Claude 응답이 에러인지 확인"""
@@ -56,12 +60,12 @@ def call_claude(
             # Rate limit 감지
             if "rate" in stderr.lower() or "limit" in stderr.lower():
                 wait = retry_delay * attempt
-                print(f"      ⏳ Rate limit 감지. {wait}초 대기 후 재시도 ({attempt}/{max_retries})")
+                logger.warning("Rate limit 감지. %d초 대기 후 재시도 (%d/%d)", wait, attempt, max_retries)
                 time.sleep(wait)
                 continue
 
             # 기타 에러
-            print(f"      ⚠️ Claude Code 에러 (시도 {attempt}/{max_retries}): {stderr[:200]}")
+            logger.warning("Claude Code 에러 (시도 %d/%d): %s", attempt, max_retries, stderr[:200])
             if attempt < max_retries:
                 time.sleep(retry_delay)
                 continue
@@ -69,7 +73,7 @@ def call_claude(
             return f"[CATM 에러] Claude Code 호출 실패: {stderr[:500]}"
 
         except subprocess.TimeoutExpired:
-            print(f"      ⏰ 타임아웃 ({timeout}초). 재시도 {attempt}/{max_retries}")
+            logger.warning("타임아웃 (%d초). 재시도 %d/%d", timeout, attempt, max_retries)
             if attempt < max_retries:
                 time.sleep(retry_delay)
                 continue
@@ -83,7 +87,7 @@ def call_claude(
             )
 
         except Exception as e:
-            print(f"      ❌ 예외 발생: {e}")
+            logger.error("예외 발생: %s", e)
             if attempt < max_retries:
                 time.sleep(retry_delay)
                 continue

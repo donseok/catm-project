@@ -1,15 +1,15 @@
 {
-  "analysis_date": "2026-02-08T20:26:34.358002",
+  "analysis_date": "2026-02-09T13:20:57.449287",
   "mode": "claude_code_max_20x_logic",
-  "total_files": 3,
-  "success": 3,
+  "total_files": 6,
+  "success": 6,
   "errors": 0,
-  "total_elapsed_seconds": 249.9,
+  "total_elapsed_seconds": 535.4,
   "results": [
     {
       "program": "PGM001",
       "status": "success",
-      "elapsed_seconds": 73.7,
+      "elapsed_seconds": 89.5,
       "output_file": "./output\\docs\\PGM001.md",
       "copybooks_used": [
         "CPYSMRY",
@@ -19,7 +19,7 @@
     {
       "program": "PGM002",
       "status": "success",
-      "elapsed_seconds": 92.6,
+      "elapsed_seconds": 82.8,
       "output_file": "./output\\docs\\PGM002.md",
       "copybooks_used": [
         "CPYINVMS",
@@ -30,11 +30,41 @@
     {
       "program": "PGM003",
       "status": "success",
-      "elapsed_seconds": 83.6,
+      "elapsed_seconds": 89.8,
       "output_file": "./output\\docs\\PGM003.md",
       "copybooks_used": [
         "CPYQCHS",
         "CPYQCRS"
+      ]
+    },
+    {
+      "program": "PGM004",
+      "status": "success",
+      "elapsed_seconds": 88.3,
+      "output_file": "./output\\docs\\PGM004.md",
+      "copybooks_used": [
+        "CPYPACT",
+        "CPYPPLAN"
+      ]
+    },
+    {
+      "program": "PGM005",
+      "status": "success",
+      "elapsed_seconds": 91.7,
+      "output_file": "./output\\docs\\PGM005.md",
+      "copybooks_used": [
+        "CPYBFOP",
+        "CPYBFTM"
+      ]
+    },
+    {
+      "program": "PGM006",
+      "status": "success",
+      "elapsed_seconds": 93.3,
+      "output_file": "./output\\docs\\PGM006.md",
+      "copybooks_used": [
+        "CPYRMMS",
+        "CPYRMRC"
       ]
     }
   ]

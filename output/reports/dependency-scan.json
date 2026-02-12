@@ -90,30 +90,124 @@
       "has_db2": true,
       "has_vsam": true,
       "category": "품질관리"
+    },
+    {
+      "name": "PGM004",
+      "file_path": "src\\cobol\\PGM004.cbl",
+      "line_count": 205,
+      "program_id": "PGM004",
+      "calls": [
+        "ABNDPGM",
+        "ERRLOG",
+        "PRDNOTI",
+        "SQLERR"
+      ],
+      "copies": [
+        "CPYPACT",
+        "CPYPPLAN"
+      ],
+      "db2_tables": [
+        "TB_PROD_PLAN_RESULT"
+      ],
+      "vsam_files": [
+        "PLNRSLT",
+        "PRDACT",
+        "PRDPLAN"
+      ],
+      "cics_maps": [],
+      "complexity": 24,
+      "paragraph_count": 11,
+      "has_cics": false,
+      "has_db2": true,
+      "has_vsam": true,
+      "category": "생산관리"
+    },
+    {
+      "name": "PGM005",
+      "file_path": "src\\cobol\\PGM005.cbl",
+      "line_count": 235,
+      "program_id": "PGM005",
+      "calls": [
+        "ABNDPGM",
+        "BFALERT",
+        "ERRLOG",
+        "SQLERR"
+      ],
+      "copies": [
+        "CPYBFOP",
+        "CPYBFTM"
+      ],
+      "db2_tables": [
+        "TB_BF_DAILY_OPER"
+      ],
+      "vsam_files": [
+        "BFDAILY",
+        "BFOPER",
+        "BFTEMP"
+      ],
+      "cics_maps": [],
+      "complexity": 35,
+      "paragraph_count": 14,
+      "has_cics": false,
+      "has_db2": true,
+      "has_vsam": true,
+      "category": "조업업무"
+    },
+    {
+      "name": "PGM006",
+      "file_path": "src\\cobol\\PGM006.cbl",
+      "line_count": 218,
+      "program_id": "PGM006",
+      "calls": [
+        "ABNDPGM",
+        "ERRLOG",
+        "MATRETN",
+        "SQLERR"
+      ],
+      "copies": [
+        "CPYRMMS",
+        "CPYRMRC"
+      ],
+      "db2_tables": [
+        "TB_RM_DAILY_RECEIPT"
+      ],
+      "vsam_files": [
+        "RMMAST",
+        "RMRCPT",
+        "RMRETN"
+      ],
+      "cics_maps": [],
+      "complexity": 17,
+      "paragraph_count": 12,
+      "has_cics": false,
+      "has_db2": true,
+      "has_vsam": true,
+      "category": "원자재관리"
     }
   ],
   "jcl_jobs": [],
   "summary": {
-    "total_programs": 3,
-    "total_lines": 462,
+    "total_programs": 6,
+    "total_lines": 1120,
     "total_jcl_jobs": 0,
-    "avg_complexity": 19.0,
-    "max_complexity": 27,
-    "unique_copybooks": 7,
-    "unique_db2_tables": 3,
-    "unique_vsam_files": 7,
+    "avg_complexity": 22.2,
+    "max_complexity": 35,
+    "unique_copybooks": 13,
+    "unique_db2_tables": 6,
+    "unique_vsam_files": 16,
     "cics_programs": 0,
-    "db2_programs": 3,
-    "vsam_programs": 3
+    "db2_programs": 6,
+    "vsam_programs": 6
   },
   "categories_summary": [
     {
       "name": "조업업무",
-      "program_count": 1,
-      "total_lines": 116,
-      "avg_complexity": 12.0,
+      "program_count": 2,
+      "total_lines": 351,
+      "avg_complexity": 23.5,
       "programs": [
-        "PGM001"
+        "PGM001",
+        "PGM005"
       ]
     },
     {
@@ -133,7 +227,236 @@
       "programs": [
         "PGM003"
       ]
+    },
+    {
+      "name": "생산관리",
+      "program_count": 1,
+      "total_lines": 205,
+      "avg_complexity": 24.0,
+      "programs": [
+        "PGM004"
+      ]
+    },
+    {
+      "name": "원자재관리",
+      "program_count": 1,
+      "total_lines": 218,
+      "avg_complexity": 17.0,
+      "programs": [
+        "PGM006"
+      ]
     }
   ],
-  "scan_date": "2026-02-08T20:22:12.672260"
+  "scan_date": "2026-02-09T13:11:23.207437",
+  "cross_reference": {
+    "copybook_usage": {
+      "CPYSMRY": [
+        "PGM001"
+      ],
+      "CPYTRANS": [
+        "PGM001"
+      ],
+      "CPYINVMS": [
+        "PGM002"
+      ],
+      "CPYINVTR": [
+        "PGM002"
+      ],
+      "CPYLEDGR": [
+        "PGM002"
+      ],
+      "CPYQCHS": [
+        "PGM003"
+      ],
+      "CPYQCRS": [
+        "PGM003"
+      ],
+      "CPYPACT": [
+        "PGM004"
+      ],
+      "CPYPPLAN": [
+        "PGM004"
+      ],
+      "CPYBFOP": [
+        "PGM005"
+      ],
+      "CPYBFTM": [
+        "PGM005"
+      ],
+      "CPYRMMS": [
+        "PGM006"
+      ],
+      "CPYRMRC": [
+        "PGM006"
+      ]
+    },
+    "db2_table_usage": {
+      "TB_DAILY_PROD": [
+        "PGM001"
+      ],
+      "TB_INV_SUMMARY": [
+        "PGM002"
+      ],
+      "TB_QC_DAILY_SUMMARY": [
+        "PGM003"
+      ],
+      "TB_PROD_PLAN_RESULT": [
+        "PGM004"
+      ],
+      "TB_BF_DAILY_OPER": [
+        "PGM005"
+      ],
+      "TB_RM_DAILY_RECEIPT": [
+        "PGM006"
+      ]
+    },
+    "called_by": {
+      "ABNDPGM": [
+        "PGM001",
+        "PGM002",
+        "PGM003",
+        "PGM004",
+        "PGM005",
+        "PGM006"
+      ],
+      "ERRLOG": [
+        "PGM001",
+        "PGM002",
+        "PGM003",
+        "PGM004",
+        "PGM005",
+        "PGM006"
+      ],
+      "SQLERR": [
+        "PGM001",
+        "PGM002",
+        "PGM003",
+        "PGM004",
+        "PGM005",
+        "PGM006"
+      ],
+      "STOCKERR": [
+        "PGM002"
+      ],
+      "QCALERT": [
+        "PGM003"
+      ],
+      "PRDNOTI": [
+        "PGM004"
+      ],
+      "BFALERT": [
+        "PGM005"
+      ],
+      "MATRETN": [
+        "PGM006"
+      ]
+    },
+    "vsam_usage": {
+      "DLYSMRY": [
+        "PGM001"
+      ],
+      "PRODTRAN": [
+        "PGM001"
+      ],
+      "INVLEDG": [
+        "PGM002"
+      ],
+      "INVMAST": [
+        "PGM002"
+      ],
+      "INVTRAN": [
+        "PGM002"
+      ],
+      "QCHIST": [
+        "PGM003"
+      ],
+      "QCRSLT": [
+        "PGM003"
+      ],
+      "PLNRSLT": [
+        "PGM004"
+      ],
+      "PRDACT": [
+        "PGM004"
+      ],
+      "PRDPLAN": [
+        "PGM004"
+      ],
+      "BFDAILY": [
+        "PGM005"
+      ],
+      "BFOPER": [
+        "PGM005"
+      ],
+      "BFTEMP": [
+        "PGM005"
+      ],
+      "RMMAST": [
+        "PGM006"
+      ],
+      "RMRCPT": [
+        "PGM006"
+      ],
+      "RMRETN": [
+        "PGM006"
+      ]
+    },
+    "program_executed_by_jcl": {}
+  },
+  "impact_scores": {
+    "CPYSMRY": 0.17,
+    "CPYTRANS": 0.17,
+    "CPYINVMS": 0.17,
+    "CPYINVTR": 0.17,
+    "CPYLEDGR": 0.17,
+    "CPYQCHS": 0.17,
+    "CPYQCRS": 0.17,
+    "CPYPACT": 0.17,
+    "CPYPPLAN": 0.17,
+    "CPYBFOP": 0.17,
+    "CPYBFTM": 0.17,
+    "CPYRMMS": 0.17,
+    "CPYRMRC": 0.17,
+    "TB_DAILY_PROD": 0.17,
+    "TB_INV_SUMMARY": 0.17,
+    "TB_QC_DAILY_SUMMARY": 0.17,
+    "TB_PROD_PLAN_RESULT": 0.17,
+    "TB_BF_DAILY_OPER": 0.17,
+    "TB_RM_DAILY_RECEIPT": 0.17,
+    "ABNDPGM": 1.0,
+    "ERRLOG": 1.0,
+    "SQLERR": 1.0,
+    "STOCKERR": 0.17,
+    "QCALERT": 0.17,
+    "PRDNOTI": 0.17,
+    "BFALERT": 0.17,
+    "MATRETN": 0.17,
+    "DLYSMRY": 0.17,
+    "PRODTRAN": 0.17,
+    "INVLEDG": 0.17,
+    "INVMAST": 0.17,
+    "INVTRAN": 0.17,
+    "QCHIST": 0.17,
+    "QCRSLT": 0.17,
+    "PLNRSLT": 0.17,
+    "PRDACT": 0.17,
+    "PRDPLAN": 0.17,
+    "BFDAILY": 0.17,
+    "BFOPER": 0.17,
+    "BFTEMP": 0.17,
+    "RMMAST": 0.17,
+    "RMRCPT": 0.17,
+    "RMRETN": 0.17
+  },
+  "dead_code": {
+    "orphan_programs": [
+      "PGM001",
+      "PGM002",
+      "PGM003",
+      "PGM004",
+      "PGM005",
+      "PGM006"
+    ],
+    "unused_copybooks": []
+  }
 }

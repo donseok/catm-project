@@ -15,6 +15,8 @@ from catm.utils.cobol_parser import (
     extract_program_id,
     parse_copybook_fields,
     calculate_complexity,
+    resolve_redefines_chains,
+    CobolField,
 )
 
 
@@ -105,3 +107,92 @@ class TestCalculateComplexity:
         complexity = calculate_complexity(sample_cobol_source)
         # 기본 1 + IF + EVALUATE + WHEN(3개) + PERFORM UNTIL + AT END(2개) = 9 이상
         assert complexity > 1
+
+
+class TestCompoundPicLength:
+    """Phase 4: 복합 PIC 패턴 길이 계산"""
+
+    def test_x3_xx(self) -> None:
+        """X(3)XX → 5"""
+        f = CobolField(level=5, name="TEST", picture="X(3)XX")
+        assert f.data_type == "문자열(5)"
+
+    def test_9_5_9_2(self) -> None:
+        """9(5)9(2) → 7"""
+        f = CobolField(level=5, name="TEST", picture="9(5)9(2)")
+        assert f.data_type == "숫자(7)"
+
+    def test_simple_x4(self) -> None:
+        """X(04) → 4"""
+        f = CobolField(level=5, name="TEST", picture="X(04)")
+        assert f.data_type == "문자열(4)"
+
+    def test_individual_x(self) -> None:
+        """XXX → 3"""
+        f = CobolField(level=5, name="TEST", picture="XXX")
+        assert f.data_type == "문자열(3)"
+
+
+class TestOccursDependingOn:
+    """Phase 4: OCCURS DEPENDING ON 파싱"""
+
+    def test_occurs_depending_on(self) -> None:
+        from catm.utils.cobol_parser import merge_continuation_lines
+        # 연속 라인으로 OCCURS DEPENDING ON (컬럼 72 제한 준수)
+        source = (
+            "000100     05 WI PIC X OCCURS 1 TO 50 TIMES                \n"
+            "000200-         DEPENDING ON WC.                              \n"
+        )
+        merged = merge_continuation_lines(source)
+        fields = parse_copybook_fields(merged)
+        assert len(fields) == 1
+        f = fields[0]
+        assert f.occurs_min == 1
+        assert f.occurs_max == 50
+        assert f.occurs_depending == "WC"
+
+    def test_fixed_occurs(self) -> None:
+        source = "000100     05 WS-ITEMS PIC X(05) OCCURS 10 TIMES.                   \n"
+        fields = parse_copybook_fields(source)
+        assert len(fields) == 1
+        assert fields[0].occurs == 10
+        assert fields[0].occurs_depending == ""
+
+
+class TestUsageLabel:
+    """Phase 4: USAGE 한글 라벨"""
+
+    def test_comp3_label(self) -> None:
+        f = CobolField(level=5, name="TEST", picture="S9(9)V99", usage="COMP-3")
+        assert "패킹십진수" in f.data_type
+
+    def test_comp5_label(self) -> None:
+        f = CobolField(level=5, name="TEST", picture="S9(9)", usage="COMP-5")
+        assert "네이티브이진수" in f.data_type
+
+    def test_binary_label(self) -> None:
+        f = CobolField(level=5, name="TEST", picture="9(4)", usage="BINARY")
+        assert "이진수" in f.data_type
+
+
+class TestRedefinesChains:
+    """Phase 4: REDEFINES 체인 추적"""
+
+    def test_simple_redefines(self) -> None:
+        fields = [
+            CobolField(level=5, name="ORIG-FIELD", picture="X(10)"),
+            CobolField(level=5, name="REDEF-A", picture="9(10)", redefines="ORIG-FIELD"),
+            CobolField(level=5, name="REDEF-B", picture="X(5)", redefines="ORIG-FIELD"),
+        ]
+        chains = resolve_redefines_chains(fields)
+        assert "ORIG-FIELD" in chains
+        assert "REDEF-A" in chains["ORIG-FIELD"]
+        assert "REDEF-B" in chains["ORIG-FIELD"]
+
+    def test_no_redefines(self) -> None:
+        fields = [
+            CobolField(level=5, name="FIELD-A", picture="X(10)"),
+            CobolField(level=5, name="FIELD-B", picture="9(5)"),
+        ]
+        chains = resolve_redefines_chains(fields)
+        assert chains == {}

@@ -10,7 +10,7 @@
 | 10 | 　DS-PLANT-CD | `X(04)` | 문자열(4) |  |  |  |
 | 10 | 　DS-PROD-DATE | `9(08)` | 숫자(8) |  |  |  |
 | 05 | DS-SUMMARY-DATA | `` | GROUP |  |  |  |
-| 10 | 　DS-TOTAL-QTY | `S9(9)V99` | 부호숫자(9.2) |  |  |  |
+| 10 | 　DS-TOTAL-QTY | `S9(9)V99` | 부호숫자(9.2) 패킹십진수 |  |  |  |
 | 10 | 　DS-TOTAL-COUNT | `9(07)` | 숫자(7) |  |  |  |
 | 10 | 　DS-ERROR-COUNT | `9(05)` | 숫자(5) |  |  |  |
 | 10 | 　DS-PROCESS-TIME | `9(06)` | 숫자(6) |  |  |  |

@@ -98,11 +98,15 @@ output:
 # --- 프로그램 업무 카테고리 ---
 program_categories:
   - name: "조업업무"
-    programs: ["PGM001"]
+    programs: ["PGM001", "PGM005"]
   - name: "출하업무"
     programs: ["PGM002"]
   - name: "품질관리"
     programs: ["PGM003"]
+  - name: "생산관리"
+    programs: ["PGM004"]
+  - name: "원자재관리"
+    programs: ["PGM006"]
 
 # --- 로그 설정 ---
 logging:

@@ -22,31 +22,73 @@ class CobolField:
     picture: str = ""
     usage: str = ""
     occurs: int = 0
+    occurs_min: int = 0
+    occurs_max: int = 0
+    occurs_depending: str = ""
     redefines: str = ""
     value: str = ""
     line_number: int = 0
 
     @property
     def data_type(self) -> str:
-        """PIC 절 → 한글 데이터 타입 변환"""
+        """PIC 절 → 한글 데이터 타입 변환 (USAGE 반영)"""
         if not self.picture:
+            if self.usage:
+                return self._usage_label()
             return "GROUP"
+
+        # USAGE가 있으면 한글 라벨 우선 반영
+        usage_label = self._usage_label() if self.usage else ""
+
         pic = self.picture.upper().replace(" ", "")
         if "X" in pic:
-            return f"문자열({self._calc_length(pic)})"
-        if "S" in pic and "V" in pic:
-            return f"부호숫자({self._int_len(pic)}.{self._dec_len(pic)})"
-        if "V" in pic:
-            return f"숫자({self._int_len(pic)}.{self._dec_len(pic)})"
-        if "9" in pic:
-            return f"숫자({self._calc_length(pic)})"
-        return pic
+            base = f"문자열({self._calc_length(pic)})"
+        elif "S" in pic and "V" in pic:
+            base = f"부호숫자({self._int_len(pic)}.{self._dec_len(pic)})"
+        elif "V" in pic:
+            base = f"숫자({self._int_len(pic)}.{self._dec_len(pic)})"
+        elif "9" in pic:
+            base = f"숫자({self._calc_length(pic)})"
+        else:
+            base = pic
+
+        if usage_label:
+            return f"{base} {usage_label}"
+        return base
+
+    def _usage_label(self) -> str:
+        """USAGE 절 → 한글 라벨"""
+        usage_map = {
+            "COMP": "이진수",
+            "COMP-1": "단정도부동소수점",
+            "COMP-2": "배정도부동소수점",
+            "COMP-3": "패킹십진수",
+            "COMP-4": "이진수",
+            "COMP-5": "네이티브이진수",
+            "BINARY": "이진수",
+            "PACKED-DECIMAL": "패킹십진수",
+            "DISPLAY": "문자표현",
+            "INDEX": "인덱스",
+        }
+        return usage_map.get(self.usage.upper(), self.usage)
 
     def _calc_length(self, pic: str) -> int:
-        match = re.search(r"[X9]\((\d+)\)", pic)
-        if match:
-            return int(match.group(1))
-        return len(re.findall(r"[X9]", pic))
+        """복합 PIC 패턴 길이 계산: X(3)XX→5, 9(5)9(2)→7"""
+        total = 0
+        i = 0
+        while i < len(pic):
+            ch = pic[i]
+            if ch in ("X", "9", "A"):
+                if i + 1 < len(pic) and pic[i + 1] == "(":
+                    close = pic.index(")", i + 2)
+                    total += int(pic[i + 2:close])
+                    i = close + 1
+                else:
+                    total += 1
+                    i += 1
+            else:
+                i += 1
+        return total
 
     def _int_len(self, pic: str) -> int:
         before_v = pic.split("V")[0].replace("S", "")
@@ -288,7 +330,8 @@ def parse_copybook_fields(source: str) -> list[CobolField]:
         r"^\s*(\d{2})\s+([\w-]+)"
         r"(?:\s+PIC(?:TURE)?\s+(?:IS\s+)?([\w(),.VSP+-]+))?"
         r"(?:\s+(?:USAGE\s+(?:IS\s+)?)?(COMP(?:-[0-9])?|BINARY|PACKED-DECIMAL|DISPLAY|INDEX))?"
-        r"(?:\s+OCCURS\s+(\d+)\s+TIMES?)?"
+        r"(?:\s+OCCURS\s+(\d+)\s+(?:TO\s+(\d+)\s+)?TIMES?"
+        r"(?:\s+DEPENDING\s+ON\s+([\w-]+))?)?"
         r"(?:\s+REDEFINES\s+([\w-]+))?"
         r"(?:\s+VALUE\s+(?:IS\s+)?(.+?))?"
         r"\s*\."
@@ -317,18 +360,45 @@ def parse_copybook_fields(source: str) -> list[CobolField]:
         match = re.match(pattern, cleaned, re.IGNORECASE)
         if match:
             g = match.groups()
+            # OCCURS n TO m TIMES DEPENDING ON var
+            occurs_first = int(g[4]) if g[4] else 0
+            occurs_to = int(g[5]) if g[5] else 0
+            occurs_dep = (g[6] or "").strip().upper()
+
+            if occurs_to:
+                # OCCURS n TO m TIMES DEPENDING ON var
+                occurs_min = occurs_first
+                occurs_max = occurs_to
+                occurs_val = occurs_max
+            else:
+                occurs_min = 0
+                occurs_max = occurs_first
+                occurs_val = occurs_first
+
             fields.append(CobolField(
                 level=int(g[0]),
                 name=g[1].upper(),
                 picture=(g[2] or "").strip().upper(),
                 usage=(g[3] or "").strip().upper(),
-                occurs=int(g[4]) if g[4] else 0,
-                redefines=(g[5] or "").strip().upper(),
-                value=(g[6] or "").strip(),
+                occurs=occurs_val,
+                occurs_min=occurs_min,
+                occurs_max=occurs_max,
+                occurs_depending=occurs_dep,
+                redefines=(g[7] or "").strip().upper(),
+                value=(g[8] or "").strip(),
                 line_number=i,
             ))
 
     return fields
+
+
+def resolve_redefines_chains(fields: list[CobolField]) -> dict[str, list[str]]:
+    """REDEFINES 체인 추적: {원본필드: [재정의필드1, 재정의필드2, ...]}"""
+    chains: dict[str, list[str]] = {}
+    for f in fields:
+        if f.redefines:
+            chains.setdefault(f.redefines, []).append(f.name)
+    return chains
 
 
 def analyze_program(file_path: str) -> CobolProgram:
